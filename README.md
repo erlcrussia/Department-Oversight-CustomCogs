@@ -13,9 +13,9 @@
 ```
 CustomCogs/
 ├── <Фракция>/
-│   ├── cogs/       # Слэш-команды (SlashCommandBuilder)
+│   ├── cogs/       # Слэш-команды
 │   ├── events/     # Обработчики событий Discord
-│   ├── tasks/      # Фоновые задачи (interval + execute)
+│   ├── tasks/      # Фоновые задачи
 │   ├── dataUtils/  # Файлы для работы с БД (Prisma)
 │   ├── utils/      # Вспомогательные файлы
 │   └── config.js   # Конфигурация кога
