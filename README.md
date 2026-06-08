@@ -51,4 +51,4 @@ node index.js MVD
 
 ## Лицензия
 
-Распространяется под лицензией GNU Affero General Public License v3.0. Подробнее — в файле [LICENSE.md](./LICENSE.md).
+Распространяется под лицензией Creative Commons Attribution-NonCommercial 4.0 International. Подробнее — в файле [LICENSE.md](./LICENSE.md).
