@@ -10,14 +10,13 @@
     "test:minzdrav": "node index.js Minzdrav"
   },
   "dependencies": {
+    "@prisma/client": "^7.4.0",
+    "axios": "^1.12.2",
     "discord.js": "^14.23.2",
     "dotenv": "^16.6.1",
-    "@prisma/client": "^7.4.0",
-    "prisma": "^7.4.0",
-    "winston": "^3.17.0",
     "luxon": "^3.7.2",
-    "axios": "^1.12.2",
-    "uuid": "^9.0.1"
+    "prisma": "^7.4.0",
+    "winston": "^3.17.0"
   },
   "engines": {
     "node": ">=18.17"
