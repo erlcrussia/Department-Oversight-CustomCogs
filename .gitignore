@@ -1,3 +1,7 @@
 .env
 node_modules/
 .env.local
+Minzdrav/data/
+*.db
+*.db-wal
+*.db-shm

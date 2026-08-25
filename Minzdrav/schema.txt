@@ -1,0 +1,133 @@
+// Prisma schema additions for ЕМИАС (Minzdrav)
+// Add to main prisma/schema.prisma and run: npx prisma migrate dev --name emias
+// All tables are prefixed emias_ to avoid collisions. Alternatively use SQLite file Minzdrav/data/emias.db (see dataUtils/db.js).
+
+model EmiasUser {
+  id               Int      @id @default(autoincrement())
+  discordId        String?  @unique @map("discord_id")
+  discordUsername  String?  @map("discord_username")
+  discordAvatar    String?  @map("discord_avatar")
+  fullName         String   @map("full_name")
+  specialty        String?
+  role             String   @default("Врач")
+  status           String   @default("offline")
+  isActive         Int      @default(1) @map("is_active")
+  createdAt        DateTime @default(now()) @map("created_at")
+  appointments     EmiasAppointment[] @relation("DoctorAppointments")
+  emrRecords       EmiasRecord[]      @relation("DoctorRecords")
+  prescriptions    EmiasPrescription[] @relation("DoctorPrescriptions")
+
+  @@map("users")
+}
+
+model EmiasPatient {
+  id          Int      @id @default(autoincrement())
+  cardNumber  String   @unique @map("card_number")
+  fullName    String   @map("full_name")
+  birthDate   String?  @map("birth_date")
+  sex         String?
+  omsNumber   String?  @unique @map("oms_number")
+  bloodGroup  String?  @map("blood_group")
+  allergies   String?
+  phone       String?
+  discordId   String?  @map("discord_id")
+  status      String   @default("active")
+  createdBy   Int?     @map("created_by")
+  createdAt   DateTime @default(now()) @map("created_at")
+  appointments EmiasAppointment[]
+  records      EmiasRecord[]
+  prescriptions EmiasPrescription[]
+  linkCodes    EmiasLinkCode[]
+
+  @@index([discordId])
+  @@map("patients")
+}
+
+model EmiasAppointment {
+  id           Int      @id @default(autoincrement())
+  ticketNumber String   @unique @map("ticket_number")
+  patientId    Int      @map("patient_id")
+  patient      EmiasPatient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  doctorId     Int?     @map("doctor_id")
+  doctor       EmiasUser? @relation("DoctorAppointments", fields: [doctorId], references: [id], onDelete: SetNull)
+  date         String
+  time         String
+  status       String   @default("waiting")
+  room         String?
+  createdBy    Int?     @map("created_by")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@index([date])
+  @@index([doctorId, date])
+  @@index([status])
+  @@map("appointments")
+}
+
+model EmiasRecord {
+  id            Int      @id @default(autoincrement())
+  patientId     Int      @map("patient_id")
+  patient       EmiasPatient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  doctorId      Int?     @map("doctor_id")
+  doctor        EmiasUser? @relation("DoctorRecords", fields: [doctorId], references: [id], onDelete: SetNull)
+  visitDate     DateTime @default(now()) @map("visit_date")
+  recordType    String   @default("visit") @map("record_type")
+  complaints    String?
+  diagnosisCode String?  @map("diagnosis_code")
+  diagnosisText String?  @map("diagnosis_text")
+  notes         String?
+  sickLeaveDays Int?     @map("sick_leave_days")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@index([patientId])
+  @@map("emr_records")
+}
+
+model EmiasPrescription {
+  id                 Int      @id @default(autoincrement())
+  prescriptionNumber String   @unique @map("prescription_number")
+  patientId          Int      @map("patient_id")
+  patient            EmiasPatient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  doctorId           Int?     @map("doctor_id")
+  doctor             EmiasUser? @relation("DoctorPrescriptions", fields: [doctorId], references: [id], onDelete: SetNull)
+  medication         String
+  dosage             String
+  durationDays       Int?     @map("duration_days")
+  issuedAt           DateTime @default(now()) @map("issued_at")
+
+  @@index([patientId])
+  @@map("prescriptions")
+}
+
+model EmiasAudit {
+  id         Int      @id @default(autoincrement())
+  actorId    Int?     @map("actor_id")
+  action     String
+  entityType String?  @map("entity_type")
+  entityId   String?  @map("entity_id")
+  details    String?
+  ip         String?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([createdAt])
+  @@map("audit_log")
+}
+
+model EmiasLinkCode {
+  code      String   @id
+  patientId Int      @map("patient_id")
+  patient   EmiasPatient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  expiresAt DateTime @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+
+  @@map("link_codes")
+}
+
+model EmiasSetting {
+  key       String   @id
+  value     String?
+  label     String?
+  updatedAt DateTime @default(now()) @map("updated_at")
+
+  @@map("settings")
+}
