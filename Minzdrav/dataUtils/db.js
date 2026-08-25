@@ -149,6 +149,35 @@ const MIGRATIONS = [
       `);
     },
   },
+  {
+    version: 2,
+    up(db) {
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS site_auth_codes (
+          code             TEXT PRIMARY KEY,
+          discord_id       TEXT NOT NULL,
+          discord_username TEXT,
+          expires_at       TEXT NOT NULL,
+          used_at          TEXT
+        );
+        CREATE INDEX IF NOT EXISTS idx_site_auth_discord ON site_auth_codes(discord_id);
+      `);
+    },
+  },
+  {
+    version: 3,
+    up(db) {
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS sessions (
+          id         INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          token      TEXT UNIQUE NOT NULL,
+          expires_at TEXT NOT NULL,
+          created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+      `);
+    },
+  },
 ];
 
 function runMigrations(db) {

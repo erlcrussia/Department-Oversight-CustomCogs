@@ -11,6 +11,7 @@ const {
 const {
   errorContainer,
   successContainer,
+  siteCodeContainer,
   queueContainer,
   cardContainer,
   helpContainer,
@@ -36,6 +37,7 @@ module.exports = {
         if (id === 'emias:book') return handleBookButton(interaction);
         if (id === 'emias:tickets') return handleTickets(interaction);
         if (id === 'emias:link') return handleLinkButton(interaction);
+        if (id === 'emias:site-code') return handleSiteCode(interaction);
         if (id === 'emias:queue') return handleQueue(interaction);
         if (id === 'emias:card') return handleCardButton(interaction);
         if (id === 'emias:status') return handleStatusButton(interaction);
@@ -180,6 +182,13 @@ async function handleLinkModal(interaction) {
     else if (e.code === 'EXPIRED') msg = 'Срок истёк (15 мин). Сгенерируйте новый.';
     throw new Error(msg);
   }
+}
+
+async function handleSiteCode(interaction) {
+  await interaction.deferReply({ flags: FLAGS, ephemeral: true });
+  const { code, expiresAt } = emias.createSiteAuthCode(interaction.user.id, interaction.user.username);
+  const container = siteCodeContainer({ code, expiresAt });
+  await interaction.editReply({ components: [container], flags: FLAGS });
 }
 
 async function handleQueue(interaction) {

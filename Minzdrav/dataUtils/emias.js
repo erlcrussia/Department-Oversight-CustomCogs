@@ -159,6 +159,48 @@ function setPatientBlocked(patientId, blocked, actorId) {
   audit({ actorId, action: blocked ? 'patient.block' : 'patient.unblock', entityType: 'patient', entityId: String(patientId) });
 }
 
+// ─── Коды авторизации сайта (бот → сайт) ─────────────────────────────────
+function createSiteAuthCode(discordId, discordUsername) {
+  const db = getSqliteDb();
+  // Инвалидируем старые неиспользованные коды этого пользователя
+  db.prepare(`DELETE FROM site_auth_codes WHERE discord_id=? AND used_at IS NULL`).run(discordId);
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = '';
+  for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  const expires = new Date(Date.now() + 10 * 60 * 1000).toISOString(); // 10 мин
+  db.prepare(`INSERT INTO site_auth_codes (code, discord_id, discord_username, expires_at) VALUES (?, ?, ?, ?)`).run(code, discordId, discordUsername || null, expires);
+  audit({ actorId: null, action: 'site_auth.create', entityType: 'user', entityId: discordId, details: { code } });
+  return { code, expiresAt: expires };
+}
+
+function consumeSiteAuthCode(code) {
+  const db = getSqliteDb();
+  const normalized = code.toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const row = db.prepare(`SELECT * FROM site_auth_codes WHERE code=?`).get(normalized);
+  if (!row) { const e = new Error('Код не найден'); e.code = 'NOT_FOUND'; throw e; }
+  if (row.used_at) { const e = new Error('Код уже использован'); e.code = 'USED'; throw e; }
+  if (new Date(row.expires_at) < new Date()) { const e = new Error('Код истёк'); e.code = 'EXPIRED'; throw e; }
+  db.prepare(`UPDATE site_auth_codes SET used_at=datetime('now') WHERE code=?`).run(normalized);
+
+  // Убедимся что citizen_accounts существует
+  const existing = db.prepare(`SELECT * FROM citizen_accounts WHERE discord_id=?`).get(row.discord_id);
+  if (existing) {
+    db.prepare(`UPDATE citizen_accounts SET last_login_at=datetime('now'), discord_username=? WHERE discord_id=?`).run(row.discord_username || existing.discord_username, row.discord_id);
+  } else {
+    db.prepare(`INSERT INTO citizen_accounts (discord_id, discord_username, last_login_at) VALUES (?, ?, datetime('now'))`).run(row.discord_id, row.discord_username || null);
+  }
+
+  // Также гарантируем что users запись для персонала может быть создана позже через /штаб, но для сайта достаточно citizen_accounts
+  audit({ actorId: null, action: 'site_auth.consume', entityType: 'user', entityId: row.discord_id, details: { code: normalized } });
+  return { discordId: row.discord_id, discordUsername: row.discord_username };
+}
+
+function getSiteAuthCode(code) {
+  const db = getSqliteDb();
+  const normalized = code.toUpperCase().replace(/[^A-Z0-9]/g, '');
+  return db.prepare(`SELECT * FROM site_auth_codes WHERE code=?`).get(normalized) || null;
+}
+
 // ─── Талоны / Очередь ───────────────────────────────────────────────────
 function getQueue(dateISO) {
   const db = getSqliteDb();
@@ -326,6 +368,9 @@ module.exports = {
   linkPatientByCode,
   createLinkCode,
   setPatientBlocked,
+  createSiteAuthCode,
+  consumeSiteAuthCode,
+  getSiteAuthCode,
   getQueue,
   getSchedule,
   bookAppointment,

@@ -16,6 +16,12 @@ function mainRows(isStaff, isDoctor, isHead) {
       new ButtonBuilder().setCustomId('emias:link').setLabel('Привязать').setStyle(ButtonStyle.Secondary),
     )
   );
+  // Ряд 1b — код для сайта
+  rows.push(
+    new ActionRowBuilder().addComponents(
+      new ButtonBuilder().setCustomId('emias:site-code').setLabel('Код для сайта').setStyle(ButtonStyle.Secondary),
+    )
+  );
 
   // Ряд 2 — сотрудник
   if (isStaff) {

@@ -174,6 +174,16 @@ function helpContainer() {
   return c;
 }
 
+function siteCodeContainer({ code, expiresAt }) {
+  const c = new ContainerBuilder().setAccentColor(PRIMARY_COLOR);
+  c.addSectionComponents(headerSection('Код для сайта', 'Введи на сайте для входа'));
+  c.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true));
+  c.addTextDisplayComponents(new TextDisplayBuilder().setContent(`**Код:** \`${code}\`\n**Действует до:** ${new Date(expiresAt).toLocaleString('ru-RU')}\n\nСкопируй и вставь на сайте в поле «Код из Discord». Одноразовый, 10 минут.`));
+  c.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true));
+  c.addTextDisplayComponents(disclaimerText());
+  return c;
+}
+
 function errorContainer(text) {
   const c = new ContainerBuilder().setAccentColor(0xC0392B);
   c.addTextDisplayComponents(new TextDisplayBuilder().setContent(`**Ошибка**\n${text}`));
@@ -211,6 +221,7 @@ module.exports = {
   queueContainer,
   cardContainer,
   helpContainer,
+  siteCodeContainer,
   errorContainer,
   successContainer,
   formatDate,
