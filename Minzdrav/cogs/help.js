@@ -1,14 +1,14 @@
 const { SlashCommandBuilder } = require('discord.js');
-const { helpEmbed } = require('../utils/embeds');
+const { helpContainer, FLAGS } = require('../utils/embeds');
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('помощь')
     .setNameLocalizations({ 'en-US': 'help', 'en-GB': 'help' })
-    .setDescription('Список команд ЕМИАС')
-    .setDescriptionLocalizations({ 'en-US': 'EMIAS help', 'en-GB': 'EMIAS help' }),
+    .setDescription('Помощь по ЕМИАС')
+    .setDescriptionLocalizations({ 'en-US': 'EMIAS help' }),
 
   async execute(interaction) {
-    await interaction.reply({ embeds: [helpEmbed()], ephemeral: true });
+    await interaction.reply({ components: [helpContainer()], flags: FLAGS, ephemeral: true });
   },
 };

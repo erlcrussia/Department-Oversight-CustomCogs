@@ -1,138 +1,193 @@
 'use strict';
 
-const { EmbedBuilder } = require('discord.js');
-const { ICON_URL, HEX_COLOR, PRIMARY_COLOR, SUCCESS_COLOR, WARNING_COLOR, DANGER_COLOR, DISCLAIMER } = require('../config');
-const { TICKET_STATUS_LABELS, TICKET_STATUS_EMOJI, DOCTOR_STATUS_LABELS, DOCTOR_STATUS_EMOJI, RECORD_TYPE_LABELS } = require('./constants');
+const {
+  ContainerBuilder,
+  TextDisplayBuilder,
+  SectionBuilder,
+  SeparatorBuilder,
+  SeparatorSpacingSize,
+  ThumbnailBuilder,
+  MessageFlags,
+} = require('discord.js');
+const { ICON_URL, PRIMARY_COLOR, DISCLAIMER } = require('../config');
+const { TICKET_STATUS_LABELS, DOCTOR_STATUS_LABELS } = require('./constants');
 
-function brandEmbed(options = {}) {
-  const e = new EmbedBuilder()
-    .setColor(PRIMARY_COLOR)
-    .setAuthor({ name: 'ЕМИАС — Минздрав', iconURL: ICON_URL })
-    .setTimestamp();
-  if (options.title) e.setTitle(options.title);
-  if (options.description) e.setDescription(options.description);
-  if (options.color) e.setColor(options.color);
-  return e;
+function containerBase() {
+  return new ContainerBuilder().setAccentColor(PRIMARY_COLOR);
 }
 
-function footer(e) {
-  return e.setFooter({ text: DISCLAIMER, iconURL: ICON_URL });
+function headerSection(title, subtitle) {
+  return new SectionBuilder()
+    .addTextDisplayComponents(
+      new TextDisplayBuilder().setContent(`## ${title}\n${subtitle || ''}`.trim())
+    )
+    .setThumbnailAccessory(
+      new ThumbnailBuilder().setURL(ICON_URL).setDescription('ЕМИАС')
+    );
 }
 
-function ticketStatusBadge(status) {
-  const emoji = TICKET_STATUS_EMOJI[status] || '•';
-  const label = TICKET_STATUS_LABELS[status] || status;
-  return `${emoji} ${label}`;
+function disclaimerText() {
+  return new TextDisplayBuilder().setContent(`-# ${DISCLAIMER}`);
 }
 
-function doctorStatusBadge(status) {
-  const emoji = DOCTOR_STATUS_EMOJI[status] || '•';
-  const label = DOCTOR_STATUS_LABELS[status] || status;
-  return `${emoji} ${label}`;
-}
+// ─── Главные контейнеры (панели) ─────────────────────────────────────────
 
-function patientCardEmbed(patient, tickets = [], records = [], prescriptions = []) {
-  const e = brandEmbed({ title: `Медкарта · ${patient.full_name}` });
-  e.setThumbnail(ICON_URL);
-  e.addFields(
-    { name: 'Карта', value: `\`${patient.card_number}\``, inline: true },
-    { name: 'Дата рождения', value: patient.birth_date || '—', inline: true },
-    { name: 'Пол', value: patient.sex || '—', inline: true },
-    { name: 'ОМС', value: patient.oms_number ? `\`${patient.oms_number}\`` : '—', inline: true },
-    { name: 'Группа крови', value: patient.blood_group || '—', inline: true },
-    { name: 'Телефон', value: patient.phone || '—', inline: true },
+function mainPanelContainer({ user, staff, citizens }) {
+  const c = containerBase();
+  c.addSectionComponents(headerSection('ЕМИАС — Минздрав', 'Единая медицинская система. Данные вымышленные (RP).'));
+  c.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true));
+
+  const roleLine = staff ? `${staff.role}${staff.specialty ? ` · ${staff.specialty}` : ''}` : 'Гражданин';
+  const charsLine = citizens.length ? `${citizens.length} персонаж(ей): ${citizens.map(ch => ch.full_name).join(', ')}` : 'Нет привязанных персонажей — используйте привязку.';
+  c.addTextDisplayComponents(
+    new TextDisplayBuilder().setContent(`**Пользователь:** ${user.username} (<@${user.id}>)\n**Роль:** ${roleLine}\n${charsLine}`.substring(0, 4000))
   );
-  if (patient.allergies) e.addFields({ name: '⚠️ Аллергии', value: `**${patient.allergies}**`, inline: false });
-  if (patient.discord_id) e.addFields({ name: 'Привязан', value: `<@${patient.discord_id}>`, inline: true });
-  e.addFields({ name: 'Статус', value: patient.status === 'blocked' ? '🔴 Заблокирован' : '🟢 Активен', inline: true });
-
-  if (tickets.length) {
-    const lines = tickets.slice(0, 5).map(t => `\`${t.date} ${t.time}\` ${ticketStatusBadge(t.status)} · ${t.ticket_number} → ${t.doctor_name || '—'} (каб. ${t.room || '—'})`).join('\n');
-    e.addFields({ name: `🎫 Талоны (${tickets.length})`, value: lines.substring(0, 1024), inline: false });
-  }
-  if (records.length) {
-    const lines = records.slice(0, 3).map(r => `**${r.diagnosis_code || ''}** ${r.diagnosis_text || ''} · ${RECORD_TYPE_LABELS[r.record_type] || r.record_type} · ${r.visit_date}`.trim()).join('\n');
-    e.addFields({ name: `📋 Последние приёмы`, value: lines.substring(0, 1024) || '—', inline: false });
-  }
-  if (prescriptions.length) {
-    const lines = prescriptions.slice(0, 3).map(p => `\`${p.prescription_number}\` ${p.medication} — ${p.dosage}`).join('\n');
-    e.addFields({ name: `💊 Рецепты`, value: lines.substring(0, 1024) || '—', inline: false });
-  }
-  return footer(e);
+  c.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true));
+  c.addTextDisplayComponents(new TextDisplayBuilder().setContent('Выберите действие кнопками ниже. Панель доступна только вам.'));
+  c.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true));
+  c.addTextDisplayComponents(disclaimerText());
+  return c;
 }
 
-function queueEmbed({ date, queue }) {
-  const e = brandEmbed({ title: `Живая очередь · ${formatDate(date)}` });
-  e.setColor(0x1d4ed8);
+function staffPanelContainer(staffList) {
+  const c = containerBase();
+  c.addSectionComponents(headerSection('Штаб — управление персоналом', 'Только для главного врача.'));
+  c.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true));
+
+  if (!staffList.length) {
+    c.addTextDisplayComponents(new TextDisplayBuilder().setContent('Штат пуст. Добавьте первого сотрудника.'));
+  } else {
+    const byRole = {};
+    for (const u of staffList) {
+      const r = u.role || 'Прочие';
+      if (!byRole[r]) byRole[r] = [];
+      byRole[r].push(u);
+    }
+    let content = '';
+    for (const [role, list] of Object.entries(byRole)) {
+      content += `**${role} (${list.length})**\n`;
+      for (const u of list) {
+        const spec = u.specialty ? ` · ${u.specialty}` : '';
+        const mention = u.discord_id ? ` <@${u.discord_id}>` : ' (не привязан)';
+        content += `- ${u.full_name} \`#${u.id}\`${spec}${mention} · ${DOCTOR_STATUS_LABELS[u.status] || u.status}\n`;
+      }
+      content += '\n';
+    }
+    // Split to avoid 4000 limit
+    const chunks = splitText(content.trim(), 4000);
+    for (const chunk of chunks) {
+      c.addTextDisplayComponents(new TextDisplayBuilder().setContent(chunk));
+    }
+  }
+  c.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true));
+  c.addTextDisplayComponents(new TextDisplayBuilder().setContent('Управление — кнопками ниже. Изменение и увольнение через выбор сотрудника.'));
+  c.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true));
+  c.addTextDisplayComponents(disclaimerText());
+  return c;
+}
+
+function queueContainer({ date, queue }) {
+  const c = containerBase();
+  c.addSectionComponents(headerSection(`Очередь · ${formatDate(date)}`, `Всего ${queue.length} талонов`));
+  c.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true));
+
   if (!queue.length) {
-    e.setDescription('Очередь пуста. Нет активных талонов на эту дату.');
+    c.addTextDisplayComponents(new TextDisplayBuilder().setContent('Очередь пуста. Нет активных талонов на эту дату.'));
   } else {
     const waiting = queue.filter(q => q.status === 'waiting').length;
     const inRoom = queue.filter(q => q.status === 'in_room').length;
-    e.setDescription(`Всего: **${queue.length}** · Ожидают: **${waiting}** · В кабинете: **${inRoom}**`);
-    const lines = queue.slice(0, 20).map(a => `\`${a.time}\` ${TICKET_STATUS_EMOJI[a.status] || '•'} \`${a.ticket_number}\` **${a.patient_name}** → ${a.doctor_name || '—'} (каб. ${a.room || '—'}) · ${TICKET_STATUS_LABELS[a.status] || a.status}`).join('\n');
-    e.addFields({ name: `📋 Очередь`, value: lines.substring(0, 1024), inline: false });
-    if (queue.length > 20) e.addFields({ name: '…', value: `и ещё ${queue.length - 20} талонов`, inline: false });
+    c.addTextDisplayComponents(new TextDisplayBuilder().setContent(`Ожидают: **${waiting}** · В кабинете: **${inRoom}**`));
+    c.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true));
+
+    const lines = queue.slice(0, 25).map(a =>
+      `\`${a.time}\` ${TICKET_STATUS_LABELS[a.status] || a.status} · \`${a.ticket_number}\` ${a.patient_name} → ${a.doctor_name || '—'} (каб. ${a.room || '—'})`
+    ).join('\n');
+
+    const chunks = splitText(lines, 3500);
+    for (const chunk of chunks) {
+      c.addTextDisplayComponents(new TextDisplayBuilder().setContent(chunk));
+    }
+    if (queue.length > 25) {
+      c.addTextDisplayComponents(new TextDisplayBuilder().setContent(`-# и ещё ${queue.length - 25} талонов`));
+    }
   }
-  return footer(e);
+  c.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true));
+  c.addTextDisplayComponents(disclaimerText());
+  return c;
 }
 
-function staffListEmbed(staff) {
-  const e = brandEmbed({ title: 'Персонал поликлиники' });
-  if (!staff.length) {
-    e.setDescription('Сотрудники не найдены. Главврач может добавить их через `/добавить-сотрудника`.');
-    return footer(e);
+function cardContainer({ patient, tickets, records, prescriptions }) {
+  const c = containerBase();
+  c.addSectionComponents(headerSection(`Карта · ${patient.full_name}`, `\`${patient.card_number}\` · ${patient.status === 'blocked' ? 'Заблокирован' : 'Активен'}`));
+  c.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true));
+
+  const demo = [
+    `**Дата рождения:** ${patient.birth_date || '—'}`,
+    `**Пол:** ${patient.sex || '—'}`,
+    `**ОМС:** ${patient.oms_number ? `\`${patient.oms_number}\`` : '—'}`,
+    `**Группа крови:** ${patient.blood_group || '—'}`,
+    `**Телефон:** ${patient.phone || '—'}`,
+    `**Аллергии:** ${patient.allergies || '—'}`,
+    patient.discord_id ? `**Привязан:** <@${patient.discord_id}>` : `**Привязан:** —`,
+  ].join('\n');
+  c.addTextDisplayComponents(new TextDisplayBuilder().setContent(demo));
+
+  if (tickets.length) {
+    c.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true));
+    c.addTextDisplayComponents(new TextDisplayBuilder().setContent(`**Талоны (${tickets.length})**`));
+    const lines = tickets.slice(0, 5).map(t => `\`${t.date} ${t.time}\` ${TICKET_STATUS_LABELS[t.status] || t.status} · \`${t.ticket_number}\` → ${t.doctor_name || '—'} (каб. ${t.room || '—'})`).join('\n');
+    c.addTextDisplayComponents(new TextDisplayBuilder().setContent(lines));
   }
-  const byRole = {};
-  for (const u of staff) {
-    const r = u.role || 'Неизвестно';
-    if (!byRole[r]) byRole[r] = [];
-    byRole[r].push(u);
+
+  if (records.length) {
+    c.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true));
+    c.addTextDisplayComponents(new TextDisplayBuilder().setContent(`**Последние приёмы**`));
+    const lines = records.slice(0, 3).map(r => `**${r.diagnosis_code || ''}** ${r.diagnosis_text || ''} · ${r.record_type} · ${r.visit_date}`.trim()).join('\n');
+    c.addTextDisplayComponents(new TextDisplayBuilder().setContent(lines || '—'));
   }
-  for (const [role, list] of Object.entries(byRole)) {
-    const value = list.map(u => `${doctorStatusBadge(u.status)} **${u.full_name}**${u.specialty ? ` — ${u.specialty}` : ''} ${u.discord_id ? `(<@${u.discord_id}>)` : '(не привязан)'}`).join('\n').substring(0, 1024);
-    e.addFields({ name: `${role} (${list.length})`, value, inline: false });
+
+  if (prescriptions.length) {
+    c.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true));
+    c.addTextDisplayComponents(new TextDisplayBuilder().setContent(`**Рецепты**`));
+    const lines = prescriptions.slice(0, 3).map(p => `\`${p.prescription_number}\` ${p.medication} — ${p.dosage}`).join('\n');
+    c.addTextDisplayComponents(new TextDisplayBuilder().setContent(lines || '—'));
   }
-  return footer(e);
+
+  c.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true));
+  c.addTextDisplayComponents(disclaimerText());
+  return c;
 }
 
-function doctorsEmbed(doctors) {
-  const grouped = {};
-  for (const d of doctors) {
-    const spec = d.specialty || 'Прочие';
-    if (!grouped[spec]) grouped[spec] = [];
-    grouped[spec].push(d);
-  }
-  const e = brandEmbed({ title: 'Врачи поликлиники', description: 'Используйте ID врача в команде `/записаться`.' });
-  for (const [spec, list] of Object.entries(grouped)) {
-    const value = list.map(d => `${doctorStatusBadge(d.status)} **${d.full_name}** \`#${d.id}\` ${d.discord_id ? `<@${d.discord_id}>` : ''}`).join('\n').substring(0, 1024);
-    e.addFields({ name: `${spec} (${list.length})`, value, inline: false });
-  }
-  if (!doctors.length) e.setDescription('Нет активных врачей. Обратитесь к главврачу.');
-  return footer(e);
+function helpContainer() {
+  const c = containerBase();
+  c.addSectionComponents(headerSection('ЕМИАС — помощь', 'Краткий гид по панелям.'));
+  c.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true));
+  c.addTextDisplayComponents(new TextDisplayBuilder().setContent([
+    '**/емис** — главная панель (запись, талоны, привязка, очередь, карта, статус).',
+    '**/штаб** — управление персоналом (только главврач): добавить, изменить, уволить, статистика, очистка.',
+    '',
+    'Все действия — кнопками внутри панелей. Панели — контейнеры V2 без лишних эмодзи.',
+    'Данные вымышленные (RP). Привязка персонажа — кодом с сайта.',
+  ].join('\n')));
+  c.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true));
+  c.addTextDisplayComponents(disclaimerText());
+  return c;
 }
 
-function helpEmbed() {
-  const e = brandEmbed({ title: 'ЕМИАС — помощь', description: 'Медицинская система Минздрава. Все данные — вымышленные (RP).' });
-  e.addFields(
-    { name: '👤 Гражданам', value: '`/я` — ваши персонажи и роль\n`/персонажи` — список персонажей\n`/записаться` — запись к врачу\n`/талон` — ваши талоны / отмена\n`/привязать` — привязать персонажа кодом с сайта', inline: false },
-    { name: '🩺 Сотрудникам', value: '`/очередь` — очередь дня\n`/карта` — медкарта пациента\n`/врачи` — список врачей\n`/статус` — сменить свой статус', inline: false },
-    { name: '⭐ Главврачу', value: '`/добавить-сотрудника` — добавить врача/регистратора\n`/персонал` — управление персоналом\n`/блок` / `/разблок` — блокировка персонажа\n`/импорт-эмк` — импорт карт из форума\n`/настройки` — вебхуки и каналы', inline: false },
-    { name: '📋 Панели', value: '`/панель-записи` — панель записи к врачу\n`/живая-очередь` — автообновляемая очередь', inline: false },
-  );
-  return footer(e);
+function errorContainer(text) {
+  const c = new ContainerBuilder().setAccentColor(0xC0392B);
+  c.addTextDisplayComponents(new TextDisplayBuilder().setContent(`**Ошибка**\n${text}`));
+  c.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true));
+  c.addTextDisplayComponents(disclaimerText());
+  return c;
 }
 
-function errorEmbed(text) {
-  return footer(brandEmbed({ title: 'Ошибка', description: text }).setColor(DANGER_COLOR));
-}
-
-function successEmbed(title, text) {
-  return footer(brandEmbed({ title, description: text }).setColor(SUCCESS_COLOR));
-}
-
-function warningEmbed(title, text) {
-  return footer(brandEmbed({ title, description: text }).setColor(WARNING_COLOR));
+function successContainer(title, text) {
+  const c = new ContainerBuilder().setAccentColor(0x2E8B57);
+  c.addTextDisplayComponents(new TextDisplayBuilder().setContent(`**${title}**\n${text}`));
+  c.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true));
+  c.addTextDisplayComponents(disclaimerText());
+  return c;
 }
 
 function formatDate(iso) {
@@ -141,18 +196,24 @@ function formatDate(iso) {
   return `${d}.${m}.${y}`;
 }
 
+function splitText(str, max) {
+  const res = [];
+  for (let i = 0; i < str.length; i += max) res.push(str.slice(i, i + max));
+  return res.length ? res : [''];
+}
+
+const FLAGS = MessageFlags.IsComponentsV2;
+
 module.exports = {
-  brandEmbed,
-  footer,
-  ticketStatusBadge,
-  doctorStatusBadge,
-  patientCardEmbed,
-  queueEmbed,
-  staffListEmbed,
-  doctorsEmbed,
-  helpEmbed,
-  errorEmbed,
-  successEmbed,
-  warningEmbed,
+  containerBase,
+  mainPanelContainer,
+  staffPanelContainer,
+  queueContainer,
+  cardContainer,
+  helpContainer,
+  errorContainer,
+  successContainer,
   formatDate,
+  FLAGS,
+  disclaimerText,
 };
