@@ -163,7 +163,7 @@ function helpContainer() {
   c.addSectionComponents(headerSection('ЕМИАС — помощь', 'Краткий гид по панелям.'));
   c.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true));
   c.addTextDisplayComponents(new TextDisplayBuilder().setContent([
-    '**/емис** — главная панель (запись, талоны, привязка, очередь, карта, статус).',
+    '**/емиас** — главная панель (запись, талоны, привязка, очередь, карта, статус).',
     '**/штаб** — управление персоналом (только главврач): добавить, изменить, уволить, статистика, очистка.',
     '',
     'Все действия — кнопками внутри панелей. Панели — контейнеры V2 без лишних эмодзи.',

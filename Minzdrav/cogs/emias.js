@@ -6,7 +6,7 @@ const { isStaff, isDoctor, isHeadPhysician } = require('../utils/permissions');
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName('емис')
+    .setName('емиас')
     .setNameLocalizations({ 'en-US': 'emias', 'en-GB': 'emias' })
     .setDescription('Главная панель ЕМИАС')
     .setDescriptionLocalizations({ 'en-US': 'EMIAS main panel' }),
