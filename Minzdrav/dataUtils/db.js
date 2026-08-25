@@ -7,21 +7,47 @@ let prisma = null;
 let sqliteDb = null;
 let usePrisma = false;
 
+// Для хостинга (не локально) — используйте DATABASE_URL
+//   Postgres:  postgresql://user:pass@host:5432/db?schema=public
+//   SQLite:    file:./data/emias.db  или  file:/app/data/emias.db
+// Локально без DATABASE_URL — fallback на файл data/emias.db
 try {
-  // Попытка загрузить Prisma (как в основном боте)
   const prismaClient = require(path.join(__dirname, '..', '..', 'prisma', 'client'));
   if (prismaClient && prismaClient.prisma) {
     prisma = prismaClient.prisma;
-    usePrisma = true;
+    // Если DATABASE_URL — postgres, используем Prisma
+    if (process.env.DATABASE_URL && /^postgres/.test(process.env.DATABASE_URL)) {
+      usePrisma = true;
+    }
   }
 } catch (_) {
   usePrisma = false;
 }
 
+function resolveSqlitePath() {
+  // Поддержка DATABASE_URL=file:... и DB_PATH
+  const url = process.env.DATABASE_URL || '';
+  if (url.startsWith('file:')) {
+    const p = url.slice(5).split('?')[0];
+    return path.isAbsolute(p) ? p : path.resolve(process.cwd(), p);
+  }
+  if (process.env.DB_PATH) {
+    return path.isAbsolute(process.env.DB_PATH) ? process.env.DB_PATH : path.resolve(process.cwd(), process.env.DB_PATH);
+  }
+  return path.join(__dirname, '..', 'data', 'emias.db');
+}
+
 function getSqliteDb() {
+  if (usePrisma && prisma) {
+    throw new Error('Prisma mode: используйте prisma.* вместо getSqliteDb()');
+  }
   if (sqliteDb) return sqliteDb;
+  // Если в проде Postgres — не создаём SQLite
+  if (process.env.DATABASE_URL && /^postgres/.test(process.env.DATABASE_URL)) {
+    throw new Error('DATABASE_URL is Postgres — используйте Prisma, не SQLite');
+  }
   const { DatabaseSync } = require('node:sqlite');
-  const dbPath = path.join(__dirname, '..', 'data', 'emias.db');
+  const dbPath = resolveSqlitePath();
   fs.mkdirSync(path.dirname(dbPath), { recursive: true });
   sqliteDb = new DatabaseSync(dbPath);
   sqliteDb.exec('PRAGMA journal_mode = WAL;');
