@@ -46,7 +46,7 @@ model Patients {
   records       Record[]        @relation("PatientRecords")
   prescriptions Prescription[]  @relation("PatientPrescriptions")
   linkCodes     LinkCode[]      @relation("PatientLinkCodes")
-  session       CitizenSession?
+  sessions      CitizenSession[]
 
   @@index([discordId])
   @@index([guildId])
