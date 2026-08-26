@@ -4,7 +4,7 @@
 
 ## Принципы
 
-- **Чистая БД** — никаких фейков. `Minzdrav/data/emias.db` создаётся пустой. Данные только реальные (создаются игроками/врачами). `/штаб` → Очистка.
+- **Чистая БД** — никаких фейков. PostgreSQL через Prisma. Данные только реальные (создаются игроками/врачами). `/штаб` → Очистка.
 - **Минимум команд** — вместо 18 слэш-команд — 3 панели с кнопками. Вся логика через компоненты.
 - **Containers V2** — вместо EmbedBuilder — `ContainerBuilder` с `accent_color`, секции, сепараторы, минимум эмодзи, аккуратная типографика.
 
@@ -54,22 +54,21 @@ Minzdrav/
 ├── events/
 │   └── interactionCreate.js # единый роутер кнопок/селектов/модалок (emias:*, staff:*)
 ├── dataUtils/
-│   ├── db.js      # SQLite + миграции (чистая БД)
-│   └── emias.js   # домен-логика (без фейков)
+│   ├── db.js      # Prisma Client (PostgreSQL)
+│   └── emias.js   # домен-логика (async/await, Prisma)
 ├── utils/
 │   ├── constants.js, embeds.js (containers), panels.js, permissions.js
 ├── tasks/
 │   ├── statusTask.js (ротация Watching) + reminders.js (24ч/1ч + 08:00 дайджест)
 ├── locales/ru.json,en.json
-├── config.js, schema.txt, README.md
-└── data/emias.db (игнорируется, создаётся автоматом)
+└── config.js, schema.txt, README.md
 ```
 
 ## Установка
 
 1. Скопируй `Minzdrav` в форк `Department-Oversight-CustomCogs`.
-2. Для Prisma — добавь `schema.txt` в `schema.prisma` → `npx prisma migrate dev`.
-3. Без Prisma — ничего не нужно, используется `data/emias.db`.
+2. Добавь `prisma/schema.prisma` в основной `schema.prisma` → `npx prisma migrate dev --name emias`.
+3. Задай `DATABASE_URL` в `.env` (PostgreSQL).
 
 ## Первый запуск
 

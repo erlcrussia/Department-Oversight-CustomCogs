@@ -1,7 +1,7 @@
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder } = require('discord.js');
 const { mainPanelContainer, FLAGS } = require('../utils/embeds');
 const { mainRows } = require('../utils/panels');
-const { getUserByDiscordId, getCitizensByDiscordId } = require('../dataUtils/emias');
+const emias = require('../dataUtils/emias');
 const { isStaff, isDoctor, isHeadPhysician } = require('../utils/permissions');
 
 module.exports = {
@@ -13,8 +13,9 @@ module.exports = {
 
   async execute(interaction) {
     const user = interaction.user;
-    const staff = getUserByDiscordId(user.id);
-    const citizens = getCitizensByDiscordId(user.id);
+    const gid = interaction.guildId;
+    const staff = await emias.getUserByDiscordId(user.id, gid);
+    const citizens = await emias.getCitizensByDiscordId(user.id, gid);
 
     const container = mainPanelContainer({ user, staff, citizens });
     const rows = mainRows(!!staff && isStaff(staff), staff && isDoctor(staff), staff && isHeadPhysician(staff));

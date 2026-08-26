@@ -10,14 +10,16 @@ const statusList = [
 let currentIndex = 0;
 
 module.exports = {
-  name: 'emias-status',
-  interval: 300000, // 5 мин
+  name: 'status-changer',
+  interval: 300000,
 
   execute: (client, logger) => {
     if (!client.user) return;
+
     const status = statusList[currentIndex];
     client.user.setActivity(status.name, { type: status.type });
-    if (logger) logger.info(`[ЕМИАС] Статус: ${status.name}`);
+
+    logger.info(`👀 Статус обновлён: ${status.name} (${ActivityType[status.type]})`);
     currentIndex = (currentIndex + 1) % statusList.length;
-  },
+  }
 };

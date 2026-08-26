@@ -1,7 +1,7 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const { staffPanelContainer, FLAGS, errorContainer } = require('../utils/embeds');
 const { staffRows } = require('../utils/panels');
-const { getUserByDiscordId, getAllStaff } = require('../dataUtils/emias');
+const emias = require('../dataUtils/emias');
 const { ROLES } = require('../utils/constants');
 
 module.exports = {
@@ -13,11 +13,11 @@ module.exports = {
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles),
 
   async execute(interaction) {
-    const actor = getUserByDiscordId(interaction.user.id);
+    const gid = interaction.guildId;
+    const actor = await emias.getUserByDiscordId(interaction.user.id, gid);
     const isHead = actor && actor.role === ROLES.HEAD_PHYSICIAN;
     const isAdmin = interaction.memberPermissions?.has(PermissionFlagsBits.Administrator);
-    // Если штат пуст — разрешаем админу
-    const all = getAllStaff();
+    const all = await emias.getAllStaff(gid);
     const hasHead = all.some(u => u.role === ROLES.HEAD_PHYSICIAN && u.is_active === 1);
 
     if (hasHead && !isHead) {
@@ -29,7 +29,7 @@ module.exports = {
       return;
     }
 
-    const staffList = getAllStaff();
+    const staffList = await emias.getAllStaff(gid);
     const container = staffPanelContainer(staffList);
     const rows = staffRows();
 
