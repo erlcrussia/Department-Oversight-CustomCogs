@@ -1,5 +1,3 @@
-'use strict';
-
 const { prisma } = require('./db');
 const { ROLES } = require('../utils/constants');
 

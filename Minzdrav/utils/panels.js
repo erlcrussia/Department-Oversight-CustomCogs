@@ -1,5 +1,3 @@
-'use strict';
-
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder } = require('discord.js');
 const { SPECIALTIES } = require('./constants');
 

@@ -1,5 +1,3 @@
-'use strict';
-
 const { prisma } = require('../dataUtils/db');
 
 let sent24 = new Set();
@@ -41,7 +39,7 @@ module.exports = {
         if (diffH > 1 && diffH <= 24 && !sent24.has(id)) {
           try {
             const user = await client.users.fetch(patient.discordId);
-            await user.send(`Напоминание: через ~${Math.round(diffH)} ч приём у **${doctor?.fullName || 'враца'}**.\n\`${t.ticketNumber}\` · ${t.date} ${t.time} (каб. ${t.room || '—'})`);
+            await user.send(`Напоминание: через ~${Math.round(diffH)} ч приём у **${doctor?.fullName || 'врача'}**.\n\`${t.ticketNumber}\` · ${t.date} ${t.time} (каб. ${t.room || '—'})`);
             sent24.add(id);
             await new Promise(r => setTimeout(r, DM_DELAY_MS));
           } catch {
@@ -53,7 +51,7 @@ module.exports = {
           try {
             const user = await client.users.fetch(patient.discordId);
             const mins = Math.max(1, Math.round(diffMs / 60000));
-            await user.send(`Скоро приём: через **${mins} мин** у **${doctor?.fullName || 'враца'}**, каб. ${t.room || '—'}.\n\`${t.ticketNumber}\` · ${t.date} ${t.time}`);
+            await user.send(`Скоро приём: через **${mins} мин** у **${doctor?.fullName || 'врача'}**, каб. ${t.room || '—'}.\n\`${t.ticketNumber}\` · ${t.date} ${t.time}`);
             sent1.add(id);
             await new Promise(r => setTimeout(r, DM_DELAY_MS));
           } catch {

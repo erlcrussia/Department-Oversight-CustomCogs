@@ -1,5 +1,3 @@
-'use strict';
-
 const { ROLES } = require('./constants');
 
 /**

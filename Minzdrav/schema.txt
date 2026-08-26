@@ -4,7 +4,7 @@
 
 model Users {
   id              Int             @id @default(autoincrement())
-  discordId       String          @unique @map("discord_id")
+  discordId       String          @map("discord_id")
   discordUsername String?         @map("discord_username")
   discordAvatar   String?         @map("discord_avatar")
   fullName        String          @map("full_name")
@@ -20,6 +20,7 @@ model Users {
   prescriptions   Prescription[]  @relation("DoctorPrescriptions")
   auditLogs       AuditLog[]      @relation("AuditActor")
 
+  @@unique([guildId, discordId])
   @@index([guildId])
   @@index([discordId])
   @@schema("emias")
@@ -197,12 +198,13 @@ model CitizenSession {
 }
 
 model Settings {
-  key       String    @id
+  key       String    @map("key")
   value     String?
   label     String?
   updatedAt DateTime  @default(now()) @map("updated_at")
   guildId   String    @default("") @map("guild_id")
 
+  @@id([guildId, key])
   @@index([guildId])
   @@schema("emias")
 }

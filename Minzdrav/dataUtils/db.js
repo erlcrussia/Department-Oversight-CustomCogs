@@ -1,5 +1,4 @@
-'use strict';
-
-const { prisma } = require('../../prisma/client');
+const prismaModule = require('../../../prisma/client');
+const prisma = prismaModule.prisma || prismaModule;
 
 module.exports = { prisma };
