@@ -10,14 +10,16 @@ const {
   errorContainer,
   successContainer,
   siteCodeContainer,
+  integrationSettingsContainer,
   queueContainer,
   cardContainer,
   helpContainer,
   staffPanelContainer,
   FLAGS,
 } = require('../utils/embeds');
-const { mainRows, staffRows, statusSelectRow, wipeSelectRow } = require('../utils/panels');
+const { mainRows, staffRows, statusSelectRow, wipeSelectRow, integrationSettingsRows } = require('../utils/panels');
 const emias = require('../dataUtils/emias');
+const settings = require('../dataUtils/settings');
 const { ROLES } = require('../utils/constants');
 
 module.exports = {
@@ -40,6 +42,11 @@ module.exports = {
         if (id === 'emias:status') return handleStatusButton(interaction);
         if (id === 'emias:admit') return handleAdmitButton(interaction, gid);
         if (id === 'emias:prescription') return handlePrescriptionButton(interaction, gid);
+        if (id === 'emias:integrations') return handleIntegrations(interaction, gid);
+        if (id === 'integ:cat:bookings') return handleIntegCategory(interaction, gid, 'bookings');
+        if (id === 'integ:cat:notify') return handleIntegCategory(interaction, gid, 'notify');
+        if (id === 'integ:ping-doctor') return handleIntegPingDoctor(interaction, gid);
+        if (id === 'integ:ping-patient') return handleIntegPingPatient(interaction, gid);
 
         if (id === 'staff:add') return handleStaffAddButton(interaction, gid);
         if (id === 'staff:list') return handleStaffList(interaction, gid);
@@ -52,6 +59,7 @@ module.exports = {
       if (interaction.isStringSelectMenu()) {
         if (id === 'emias:status:select') return handleStatusSelect(interaction, gid);
         if (id === 'staff:wipe:select') return handleWipeSelect(interaction, gid);
+        if (id === 'integ:channel') return handleIntegChannel(interaction, gid);
       }
 
       if (interaction.isModalSubmit()) {
@@ -124,6 +132,9 @@ async function handleBookModal(interaction, gid) {
 
   const res = await emias.bookAppointment({ patientId: pid, doctorId, date: dateRaw, time: timeRaw, viaDiscordId: interaction.user.id, guildId: gid });
   await interaction.editReply({ components: [successContainer('Запись создана', `**${patient.full_name}** → врач #${doctorId}\nДата: ${dateRaw} ${timeRaw}\nТалон: \`${res.ticket_number}\``)], flags: FLAGS });
+
+  const doctor = doctorId ? await emias.getUserById(doctorId) : null;
+  notifyBooking(interaction, gid, { patient, doctor, ticket: res.ticket_number, date: dateRaw, time: timeRaw }).catch(() => {});
 }
 
 async function handleTickets(interaction, gid) {
@@ -429,4 +440,82 @@ async function handleUnblockModal(interaction) {
   if (!p) throw new Error('Пациент не найден.');
   await emias.setPatientBlocked(pid, false, actor.id);
   await interaction.editReply({ components: [successContainer('Разблокирован', `**${p.full_name}** снова активен.` )], flags: FLAGS });
+}
+
+// ─── Интеграции (панель настроек) ──────────────────────────────────────────
+
+async function requireHead(interaction, gid) {
+  const actor = await emias.getUserByDiscordId(interaction.user.id, gid);
+  const isAdmin = interaction.memberPermissions?.has(PermissionFlagsBits.Administrator);
+  if (!(actor && actor.role === ROLES.HEAD_PHYSICIAN) && !isAdmin) {
+    throw new Error('Только главврач или админ сервера.');
+  }
+}
+
+async function renderIntegPanel(interaction, gid, cat = 'bookings') {
+  const s = settings.get(gid);
+  await interaction.update({
+    components: [integrationSettingsContainer(s, cat), ...integrationSettingsRows(s, cat)],
+    flags: FLAGS,
+  });
+}
+
+async function handleIntegrations(interaction, gid) {
+  await interaction.deferReply({ flags: FLAGS, ephemeral: true });
+  await requireHead(interaction, gid);
+  await renderIntegPanel(interaction, gid, 'bookings');
+}
+
+async function handleIntegCategory(interaction, gid, cat) {
+  await interaction.deferUpdate();
+  await requireHead(interaction, gid);
+  await renderIntegPanel(interaction, gid, cat);
+}
+
+async function handleIntegChannel(interaction, gid) {
+  await interaction.deferUpdate();
+  await requireHead(interaction, gid);
+  const channelId = interaction.values[0];
+  settings.set(gid, { bookingChannelId: channelId });
+  await renderIntegPanel(interaction, gid, 'bookings');
+}
+
+async function handleIntegPingDoctor(interaction, gid) {
+  await interaction.deferUpdate();
+  await requireHead(interaction, gid);
+  const s = settings.get(gid);
+  settings.set(gid, { pingDoctor: !s.pingDoctor });
+  await renderIntegPanel(interaction, gid, 'notify');
+}
+
+async function handleIntegPingPatient(interaction, gid) {
+  await interaction.deferUpdate();
+  await requireHead(interaction, gid);
+  const s = settings.get(gid);
+  settings.set(gid, { pingPatient: !s.pingPatient });
+  await renderIntegPanel(interaction, gid, 'notify');
+}
+
+// ─── Уведомление о новой записи (интеграции) ──────────────────────────────
+
+async function notifyBooking(interaction, gid, { patient, doctor, ticket, date, time }) {
+  const s = settings.get(gid);
+  if (!s.bookingChannelId) return; // канал не задан — не шлём
+  const channel = await interaction.client.channels.fetch(s.bookingChannelId).catch(() => null);
+  if (!channel || !channel.isTextBased()) return;
+
+  const pings = [];
+  if (s.pingPatient && patient && patient.discord_id) pings.push(`<@${patient.discord_id}>`);
+  if (s.pingDoctor && doctor && doctor.discord_id) pings.push(`<@${doctor.discord_id}>`);
+
+  const lines = [
+    pings.join(' '),
+    `**Новая запись на приём**`,
+    `> **Пациент:** ${patient?.full_name || '—'}`,
+    `> **Врач:** ${doctor ? `${doctor.full_name}${doctor.specialty ? ` (${doctor.specialty})` : ''}` : '—'}`,
+    `> **Когда:** ${date} в ${time}`,
+    `> **Талон:** \`${ticket}\``,
+  ].filter(Boolean).join('\n');
+
+  await channel.send({ content: lines }).catch(() => {});
 }

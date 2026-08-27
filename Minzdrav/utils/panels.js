@@ -1,4 +1,4 @@
-const { ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder } = require('discord.js');
+const { ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, ChannelSelectMenuBuilder, ChannelType } = require('discord.js');
 const { SPECIALTIES } = require('./constants');
 
 // ─── Главные панели — ряды кнопок (минимум эмодзи, контейнеры V2) ──────
@@ -45,6 +45,60 @@ function mainRows(isStaff, isDoctor, isHead) {
     }
   }
 
+  // Ряд — интеграции (только главврач): открыть панель настроек
+  if (isHead) {
+    rows.push(
+      new ActionRowBuilder().addComponents(
+        new ButtonBuilder().setCustomId('emias:integrations').setLabel('Интеграции').setStyle(ButtonStyle.Primary),
+      )
+    );
+  }
+
+  return rows;
+}
+
+function integrationSettingsRows(settings, cat = 'bookings') {
+  const rows = [];
+
+  // Навигация по категориям (листание)
+  rows.push(
+    new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId('integ:cat:bookings')
+        .setLabel('Записи')
+        .setStyle(cat === 'bookings' ? ButtonStyle.Primary : ButtonStyle.Secondary),
+      new ButtonBuilder()
+        .setCustomId('integ:cat:notify')
+        .setLabel('Уведомления')
+        .setStyle(cat === 'notify' ? ButtonStyle.Primary : ButtonStyle.Secondary),
+    )
+  );
+
+  // Контролы активной категории
+  if (cat === 'bookings') {
+    const chMenu = new ChannelSelectMenuBuilder()
+      .setCustomId('integ:channel')
+      .setPlaceholder(settings.bookingChannelId ? `Текущий: <#${settings.bookingChannelId}>` : 'Выберите канал для записей')
+      .setMinValues(1)
+      .setMaxValues(1)
+      .addChannelTypes(ChannelType.GuildText);
+    if (settings.bookingChannelId) chMenu.setDefaultChannels([settings.bookingChannelId]);
+    rows.push(new ActionRowBuilder().addComponents(chMenu));
+  } else {
+    rows.push(
+      new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId('integ:ping-doctor')
+          .setLabel(`Пинг врача: ${settings.pingDoctor ? 'ВКЛ' : 'ВЫКЛ'}`)
+          .setStyle(settings.pingDoctor ? ButtonStyle.Success : ButtonStyle.Secondary),
+        new ButtonBuilder()
+          .setCustomId('integ:ping-patient')
+          .setLabel(`Пинг пациента: ${settings.pingPatient ? 'ВКЛ' : 'ВЫКЛ'}`)
+          .setStyle(settings.pingPatient ? ButtonStyle.Success : ButtonStyle.Secondary),
+      )
+    );
+  }
+
   return rows;
 }
 
@@ -88,4 +142,4 @@ function wipeSelectRow() {
   );
 }
 
-module.exports = { mainRows, staffRows, statusSelectRow, wipeSelectRow };
+module.exports = { mainRows, staffRows, statusSelectRow, wipeSelectRow, integrationSettingsRows };

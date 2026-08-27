@@ -182,6 +182,36 @@ function siteCodeContainer({ code, expiresAt }) {
   return c;
 }
 
+function integrationSettingsContainer(settings, cat = 'bookings') {
+  const c = containerBase();
+  if (cat === 'bookings') {
+    c.addSectionComponents(headerSection('ЕМИАС — канал записей', 'Куда приходят уведомления о новых записях.'));
+    c.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true));
+    const ch = settings.bookingChannelId ? `<#${settings.bookingChannelId}>` : '**не задан** (уведомления выключены)';
+    c.addTextDisplayComponents(new TextDisplayBuilder().setContent([
+      'Выберите канал, куда будут приходить уведомления о новых записях на приём.',
+      '',
+      `**Текущий канал:** ${ch}`,
+    ].join('\n')));
+  } else {
+    c.addSectionComponents(headerSection('ЕМИАС — уведомления о записях', 'Кого пинговать в уведомлении.'));
+    c.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true));
+    c.addTextDisplayComponents(new TextDisplayBuilder().setContent([
+      'Кого упоминать в уведомлении о новой записи:',
+      '',
+      `**Врач (к которому записались):** ${settings.pingDoctor ? 'ВКЛ' : 'ВЫКЛ'}`,
+      `**Пациент:** ${settings.pingPatient ? 'ВКЛ' : 'ВЫКЛ'}`,
+      '',
+      'Пинги срабатывают, только если у врача и пациента указан Discord в карте/профиле.',
+    ].join('\n')));
+  }
+  c.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true));
+  c.addTextDisplayComponents(new TextDisplayBuilder().setContent('Переключайте категорию кнопками ниже. Изменения сохраняются сразу.'));
+  c.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true));
+  c.addTextDisplayComponents(disclaimerText());
+  return c;
+}
+
 function errorContainer(text) {
   const c = new ContainerBuilder().setAccentColor(0xC0392B);
   c.addTextDisplayComponents(new TextDisplayBuilder().setContent(`**Ошибка**\n${text}`));
@@ -220,6 +250,7 @@ module.exports = {
   cardContainer,
   helpContainer,
   siteCodeContainer,
+  integrationSettingsContainer,
   errorContainer,
   successContainer,
   formatDate,
