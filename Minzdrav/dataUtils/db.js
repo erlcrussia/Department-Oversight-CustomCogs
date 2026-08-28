@@ -1,9 +1,20 @@
-const { PrismaClient } = require('../../prisma/client');
+let prisma = null;
 
-// Единый экземпляр клиента к общей БД (Neon, схема "emias").
-// Бот и сайт — равноправные клиенты одной базы: данные граждан/врачей/талонов общие.
-const prisma = new PrismaClient({
-  datasourceUrl: process.env.DATABASE_URL,
-});
+try {
+  const prismaModule = require('../../../prisma/client');
+  prisma = prismaModule.prisma || prismaModule;
+} catch (_) {
+  try {
+    const localModule = require('../../prisma/client');
+    prisma = localModule.prisma || localModule;
+  } catch (err) {
+    try {
+      const { PrismaClient } = require('@prisma/client');
+      prisma = new PrismaClient();
+    } catch {
+      prisma = null;
+    }
+  }
+}
 
 module.exports = { prisma };
