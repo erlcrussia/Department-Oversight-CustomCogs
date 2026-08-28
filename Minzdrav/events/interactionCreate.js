@@ -29,48 +29,48 @@ module.exports = {
     const id = interaction.customId || '';
     const gid = interaction.guildId;
 
-    if (interaction.isChatInputCommand()) return;
+    if (interaction.isChatInputCommand()) return false;
 
     try {
       if (interaction.isButton()) {
-        if (id === 'emias:book') return handleBookButton(interaction, gid);
-        if (id === 'emias:tickets') return handleTickets(interaction, gid);
-        if (id === 'emias:link') return handleLinkButton(interaction);
-        if (id === 'emias:site-code') return handleSiteCode(interaction, gid);
-        if (id === 'emias:queue') return handleQueue(interaction, gid);
-        if (id === 'emias:card') return handleCardButton(interaction);
-        if (id === 'emias:status') return handleStatusButton(interaction);
-        if (id === 'emias:admit') return handleAdmitButton(interaction, gid);
-        if (id === 'emias:prescription') return handlePrescriptionButton(interaction, gid);
-        if (id === 'emias:integrations') return handleIntegrations(interaction, gid);
-        if (id === 'integ:cat:bookings') return handleIntegCategory(interaction, gid, 'bookings');
-        if (id === 'integ:cat:notify') return handleIntegCategory(interaction, gid, 'notify');
-        if (id === 'integ:ping-doctor') return handleIntegPingDoctor(interaction, gid);
-        if (id === 'integ:ping-patient') return handleIntegPingPatient(interaction, gid);
+        if (id === 'emias:book') { await handleBookButton(interaction, gid); return true; }
+        if (id === 'emias:tickets') { await handleTickets(interaction, gid); return true; }
+        if (id === 'emias:link') { await handleLinkButton(interaction); return true; }
+        if (id === 'emias:site-code') { await handleSiteCode(interaction, gid); return true; }
+        if (id === 'emias:queue') { await handleQueue(interaction, gid); return true; }
+        if (id === 'emias:card') { await handleCardButton(interaction); return true; }
+        if (id === 'emias:status') { await handleStatusButton(interaction); return true; }
+        if (id === 'emias:admit') { await handleAdmitButton(interaction, gid); return true; }
+        if (id === 'emias:prescription') { await handlePrescriptionButton(interaction, gid); return true; }
+        if (id === 'emias:integrations') { await handleIntegrations(interaction, gid); return true; }
+        if (id === 'integ:cat:bookings') { await handleIntegCategory(interaction, gid, 'bookings'); return true; }
+        if (id === 'integ:cat:notify') { await handleIntegCategory(interaction, gid, 'notify'); return true; }
+        if (id === 'integ:ping-doctor') { await handleIntegPingDoctor(interaction, gid); return true; }
+        if (id === 'integ:ping-patient') { await handleIntegPingPatient(interaction, gid); return true; }
 
-        if (id === 'staff:add') return handleStaffAddButton(interaction, gid);
-        if (id === 'staff:list') return handleStaffList(interaction, gid);
-        if (id === 'staff:stats') return handleStats(interaction, gid);
-        if (id === 'staff:wipe') return handleWipeButton(interaction);
-        if (id === 'staff:block') return handleBlockButton(interaction);
-        if (id === 'staff:unblock') return handleUnblockButton(interaction);
+        if (id === 'staff:add') { await handleStaffAddButton(interaction, gid); return true; }
+        if (id === 'staff:list') { await handleStaffList(interaction, gid); return true; }
+        if (id === 'staff:stats') { await handleStats(interaction, gid); return true; }
+        if (id === 'staff:wipe') { await handleWipeButton(interaction); return true; }
+        if (id === 'staff:block') { await handleBlockButton(interaction); return true; }
+        if (id === 'staff:unblock') { await handleUnblockButton(interaction); return true; }
       }
 
       if (interaction.isStringSelectMenu()) {
-        if (id === 'emias:status:select') return handleStatusSelect(interaction, gid);
-        if (id === 'staff:wipe:select') return handleWipeSelect(interaction, gid);
-        if (id === 'integ:channel') return handleIntegChannel(interaction, gid);
+        if (id === 'emias:status:select') { await handleStatusSelect(interaction, gid); return true; }
+        if (id === 'staff:wipe:select') { await handleWipeSelect(interaction, gid); return true; }
+        if (id === 'integ:channel') { await handleIntegChannel(interaction, gid); return true; }
       }
 
       if (interaction.isModalSubmit()) {
-        if (id === 'emias:book:modal') return handleBookModal(interaction, gid);
-        if (id === 'emias:link:modal') return handleLinkModal(interaction);
-        if (id === 'emias:card:modal') return handleCardModal(interaction, gid);
-        if (id === 'emias:admit:modal') return handleAdmitModal(interaction, gid);
-        if (id === 'emias:prescription:modal') return handlePrescriptionModal(interaction, gid);
-        if (id === 'staff:add:modal') return handleStaffAddModal(interaction, gid);
-        if (id === 'staff:block:modal') return handleBlockModal(interaction);
-        if (id === 'staff:unblock:modal') return handleUnblockModal(interaction);
+        if (id === 'emias:book:modal') { await handleBookModal(interaction, gid); return true; }
+        if (id === 'emias:link:modal') { await handleLinkModal(interaction); return true; }
+        if (id === 'emias:card:modal') { await handleCardModal(interaction, gid); return true; }
+        if (id === 'emias:admit:modal') { await handleAdmitModal(interaction, gid); return true; }
+        if (id === 'emias:prescription:modal') { await handlePrescriptionModal(interaction, gid); return true; }
+        if (id === 'staff:add:modal') { await handleStaffAddModal(interaction, gid); return true; }
+        if (id === 'staff:block:modal') { await handleBlockModal(interaction); return true; }
+        if (id === 'staff:unblock:modal') { await handleUnblockModal(interaction); return true; }
       }
     } catch (e) {
       console.error('[ЕМИАС] component error', e);
@@ -79,7 +79,9 @@ module.exports = {
       } else {
         await interaction.followUp({ components: [errorContainer(e.message || 'Ошибка')], flags: FLAGS, ephemeral: true }).catch(() => {});
       }
+      return true;
     }
+    return false;
   },
 };
 

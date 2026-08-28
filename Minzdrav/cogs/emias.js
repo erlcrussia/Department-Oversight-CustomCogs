@@ -3,6 +3,7 @@ const { mainPanelContainer, FLAGS } = require('../utils/embeds');
 const { mainRows } = require('../utils/panels');
 const emias = require('../dataUtils/emias');
 const { isStaff, isDoctor, isHeadPhysician } = require('../utils/permissions');
+const interactionHandler = require('../events/interactionCreate');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -25,5 +26,23 @@ module.exports = {
       flags: FLAGS,
       ephemeral: true,
     });
+  },
+
+  async onInteraction(interaction, context) {
+    const id = interaction.customId || '';
+    if (id.startsWith('emias:') || id.startsWith('staff:') || id.startsWith('integ:')) {
+      await interactionHandler.execute(interaction, context?.client);
+      return true;
+    }
+    return false;
+  },
+
+  async handleModal(interaction, context) {
+    const id = interaction.customId || '';
+    if (id.startsWith('emias:') || id.startsWith('staff:') || id.startsWith('integ:')) {
+      await interactionHandler.execute(interaction, context?.client);
+      return true;
+    }
+    return false;
   },
 };
