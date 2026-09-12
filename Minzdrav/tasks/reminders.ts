@@ -10,6 +10,8 @@ export default {
 
   execute: async (client, logger) => {
     try {
+      if (!prisma?.appointment) return;
+
       const today = new Date().toISOString().slice(0, 10);
       const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
       const now = new Date();
