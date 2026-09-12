@@ -1,5 +1,9 @@
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const FILE = path.join(__dirname, '..', 'data', 'integrations.json');
 
@@ -10,7 +14,7 @@ const DEFAULTS = {
   pingPatient: true,      // пинговать пациента
 };
 
-function readAll() {
+function readAll(): Record<string, any> {
   try {
     return JSON.parse(fs.readFileSync(FILE, 'utf8')) || {};
   } catch {
@@ -18,17 +22,17 @@ function readAll() {
   }
 }
 
-function writeAll(obj) {
+function writeAll(obj: Record<string, any>): void {
   fs.mkdirSync(path.dirname(FILE), { recursive: true });
   fs.writeFileSync(FILE, JSON.stringify(obj, null, 2));
 }
 
-function get(guildId) {
+function get(guildId: string): any {
   const all = readAll();
   return { ...DEFAULTS, ...(all[guildId] || {}) };
 }
 
-function set(guildId, patch) {
+function set(guildId: string, patch: any): any {
   const all = readAll();
   all[guildId] = { ...DEFAULTS, ...(all[guildId] || {}), ...patch };
   writeAll(all);
