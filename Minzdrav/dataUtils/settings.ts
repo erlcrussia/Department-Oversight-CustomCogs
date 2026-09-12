@@ -1,5 +1,5 @@
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
 
 const FILE = path.join(__dirname, '..', 'data', 'integrations.json');
 
@@ -35,4 +35,10 @@ function set(guildId, patch) {
   return all[guildId];
 }
 
-module.exports = { get, set, DEFAULTS };
+export {
+  get,
+  set,
+  DEFAULTS
+};
+
+export default { get, set, DEFAULTS };

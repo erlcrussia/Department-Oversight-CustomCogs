@@ -1,5 +1,5 @@
-const { ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, ChannelSelectMenuBuilder, ChannelType } = require('discord.js');
-const { SPECIALTIES } = require('./constants');
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, ChannelSelectMenuBuilder, ChannelType } from 'discord.js';
+import { SPECIALTIES } from './constants.js';
 
 // ─── Главные панели — ряды кнопок (минимум эмодзи, контейнеры V2) ──────
 
@@ -142,4 +142,12 @@ function wipeSelectRow() {
   );
 }
 
-module.exports = { mainRows, staffRows, statusSelectRow, wipeSelectRow, integrationSettingsRows };
+export {
+  mainRows,
+  staffRows,
+  statusSelectRow,
+  wipeSelectRow,
+  integrationSettingsRows
+};
+
+export default { mainRows, staffRows, statusSelectRow, wipeSelectRow, integrationSettingsRows };

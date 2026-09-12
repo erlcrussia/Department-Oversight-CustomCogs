@@ -1,4 +1,4 @@
-const { ActivityType } = require('discord.js');
+import { ActivityType } from 'discord.js';
 
 const statusList = [
   { name: "Сотрудники ФСБ", type: ActivityType.Watching },
@@ -10,7 +10,7 @@ const statusList = [
 ];
 let currentIndex = 0;
 
-module.exports = {
+export default {
   name: 'status-changer',
   interval: 300000,
 

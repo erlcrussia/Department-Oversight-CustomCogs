@@ -1,10 +1,10 @@
-const { prisma } = require('../dataUtils/db');
+import { prisma } from '../dataUtils/db.js';
 
 let sent24 = new Set();
 let sent1 = new Set();
 let lastDigestDate = null;
 
-module.exports = {
+export default {
   name: 'emias-reminders',
   interval: 60000,
 

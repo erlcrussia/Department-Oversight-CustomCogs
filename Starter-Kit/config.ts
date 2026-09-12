@@ -1,6 +1,6 @@
 const ICON_URL = "https://cdn.erlcrussia.com/images/Moscow-RolePlay-Icon-Website.png";
 
 
-module.exports = {
+export default {
     ICON_URL
 }

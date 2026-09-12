@@ -1,4 +1,4 @@
-const { ROLES } = require('./constants');
+import { ROLES } from './constants.js';
 
 /**
  * Проверка прав в стиле ЕМИАС RBAC, адаптированная под CustomCogs.
@@ -56,7 +56,19 @@ function requireDoctor(user) {
   }
 }
 
-module.exports = {
+export {
+  isHeadPhysician,
+  isDoctor,
+  isRegistrar,
+  isStaff,
+  canSeeMedicalData,
+  canManageTickets,
+  requireStaff,
+  requireHead,
+  requireDoctor
+};
+
+export default {
   isHeadPhysician,
   isDoctor,
   isRegistrar,

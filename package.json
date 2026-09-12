@@ -2,6 +2,7 @@
   "name": "customcogs",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "description": "Кастомные коги для бота Управление Департаментами (ER:LC Россия)",
   "scripts": {
     "typecheck": "tsc --noEmit",

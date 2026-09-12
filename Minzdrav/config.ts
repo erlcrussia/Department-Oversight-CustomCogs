@@ -6,7 +6,22 @@ const WARNING_COLOR = 0xD4A017;
 const DANGER_COLOR = 0xC0392B;
 const BRAND_GRADIENT = { from: '#0f2b4e', to: '#2563eb' };
 
-module.exports = {
+const FOOTER_TEXT = 'ЕМИАС · Единая медицинская информационно-аналитическая система';
+const DISCLAIMER = 'Данный бот не является официальным ресурсом. Проект создан исключительно для RP-проекта.';
+
+export {
+  HEX_COLOR,
+  PRIMARY_COLOR,
+  SUCCESS_COLOR,
+  WARNING_COLOR,
+  DANGER_COLOR,
+  ICON_URL,
+  BRAND_GRADIENT,
+  FOOTER_TEXT,
+  DISCLAIMER
+};
+
+export default {
   HEX_COLOR,
   PRIMARY_COLOR,
   SUCCESS_COLOR,

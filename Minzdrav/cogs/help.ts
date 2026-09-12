@@ -1,7 +1,7 @@
-const { SlashCommandBuilder } = require('discord.js');
-const { helpContainer, FLAGS } = require('../utils/embeds');
+import { SlashCommandBuilder } from 'discord.js';
+import { helpContainer, FLAGS } from '../utils/embeds.js';
 
-module.exports = {
+export default {
   data: new SlashCommandBuilder()
     .setName('помощь')
     .setNameLocalizations({ 'en-US': 'help', 'en-GB': 'help' })

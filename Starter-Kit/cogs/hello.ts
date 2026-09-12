@@ -1,7 +1,7 @@
-const { SlashCommandBuilder } = require('discord.js');
-const { t, getLang } = require('../../../utils/locale');
+import { SlashCommandBuilder } from 'discord.js';
+import { t, getLang } from '../../utils/locale.js';
 
-module.exports = {
+export default {
     data: new SlashCommandBuilder()
         .setName('привет')
         .setNameLocalizations({ 'en-US': 'hello', 'en-GB': 'hello' })

@@ -1,5 +1,5 @@
-const { prisma } = require('./db');
-const { ROLES } = require('../utils/constants');
+import { prisma } from './db.js';
+import { ROLES } from '../utils/constants.js';
 
 // ─── Хелперы маппинга Prisma → snake_case (совместимость с вызывающим кодом) ──
 
@@ -397,7 +397,7 @@ async function getSchedule(doctorId, dateISO, guildId) {
   return result;
 }
 
-async function bookAppointment({ patientId, doctorId, date, time, room, viaDiscordId, guildId }) {
+async function bookAppointment({ patientId, doctorId, date, time, room, viaDiscordId, guildId }: { patientId: any; doctorId?: any; date: any; time: any; room?: any; viaDiscordId?: any; guildId?: any; }) {
   const pRaw = await prisma.patients.findUnique({ where: { id: patientId } });
   if (!pRaw) throw makeError('Пациент не найден', 'PATIENT_NOT_FOUND');
   if (pRaw.status === 'blocked') throw makeError('Пациент заблокирован', 'BLOCKED');
@@ -619,7 +619,7 @@ async function wipePatients(guildId) {
   return { ok: true };
 }
 
-module.exports = {
+export default {
   getUserByDiscordId, getUserById, getAllStaff, getDoctors,
   createStaff, updateStaff, deactivateStaff, setDoctorStatus,
   getPatientById, searchPatients, getCitizensByDiscordId, getPatientCard,

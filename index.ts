@@ -17,9 +17,14 @@
  * ═════════════════════════════════════════════════════════════
  */
 
-const { Client, GatewayIntentBits, Events, Collection } = require('discord.js');
-const path = require('path');
-const fs = require('fs');
+import { Client, GatewayIntentBits, Events, Collection } from 'discord.js';
+import path from 'node:path';
+import fs from 'node:fs';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import 'dotenv/config';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const FACTION = process.argv[2];
 
@@ -35,20 +40,22 @@ if (!fs.existsSync(factionPath)) {
     process.exit(1);
 }
 
-require('dotenv').config({ path: path.join(__dirname, '.env') });
-
 const BOT_TOKEN = process.env.TEST_BOT_TOKEN || process.env.DISCORD_TOKEN;
 
-let prisma;
+let prisma: any = null;
 try {
-    prisma = require(path.join(__dirname, 'prisma', 'client'));
+    const pPath = path.resolve(__dirname, '..', 'prisma', 'client.js');
+    if (fs.existsSync(pPath)) {
+        const pMod = await import(pathToFileURL(pPath).href);
+        prisma = pMod.default || pMod.prisma || pMod;
+    }
 } catch {
     prisma = null;
 }
 
 const logger = console;
 
-const client = new Client({
+const client: any = new Client({
     intents: [
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMessages,
@@ -58,11 +65,11 @@ const client = new Client({
 });
 
 client.commands = new Collection();
-global.logger = logger;
+(global as any).logger = logger;
 
-const commandsData = [];
+const commandsData: any[] = [];
 
-function loadCogs(dir) {
+async function loadCogs(dir: string) {
     if (!fs.existsSync(dir)) return;
 
     const files = fs.readdirSync(dir);
@@ -71,15 +78,16 @@ function loadCogs(dir) {
         const stat = fs.statSync(fullPath);
 
         if (stat.isDirectory()) {
-            loadCogs(fullPath);
+            await loadCogs(fullPath);
             continue;
         }
 
-        if (!file.endsWith('.js')) continue;
+        if (!file.endsWith('.js') && !file.endsWith('.ts')) continue;
+        if (file.endsWith('.d.ts')) continue;
 
         try {
-            delete require.cache[require.resolve(fullPath)];
-            const cog = require(fullPath);
+            const cogModule = await import(pathToFileURL(fullPath).href);
+            const cog = cogModule.default || cogModule;
 
             if (cog && cog.data && cog.data.name) {
                 const key = cog.data.name;
@@ -100,37 +108,37 @@ function loadCogs(dir) {
             } else {
                 logger.info(`[INFO] Загружен модуль: ${file}`);
             }
-        } catch (e) {
+        } catch (e: any) {
             logger.error(`[ERROR] Ошибка загрузки ${file}:`, e.message);
         }
     }
 }
 
-function loadEvents(dir) {
+async function loadEvents(dir: string) {
     if (!fs.existsSync(dir)) return;
 
-    const files = fs.readdirSync(dir).filter(f => f.endsWith('.js'));
+    const files = fs.readdirSync(dir).filter(f => (f.endsWith('.js') || f.endsWith('.ts')) && !f.endsWith('.d.ts'));
     for (const file of files) {
         try {
             const eventPath = path.join(dir, file);
-            delete require.cache[require.resolve(eventPath)];
-            const event = require(eventPath);
+            const eventModule = await import(pathToFileURL(eventPath).href);
+            const event = eventModule.default || eventModule;
 
             if (event.once) {
-                client.once(event.name, (...args) => event.execute(...args, client));
+                client.once(event.name, (...args: any[]) => event.execute(...args, client));
             } else {
-                client.on(event.name, (...args) => event.execute(...args, client));
+                client.on(event.name, (...args: any[]) => event.execute(...args, client));
             }
             logger.info(`[INFO] Загружено событие: ${event.name} из ${file}`);
-        } catch (e) {
+        } catch (e: any) {
             logger.error(`[ERROR] Ошибка загрузки события ${file}:`, e.message);
         }
     }
 }
 
-loadCogs(path.join(factionPath, 'cogs'));
-loadCogs(path.join(factionPath, 'tasks'));
-loadEvents(path.join(factionPath, 'events'));
+await loadCogs(path.join(factionPath, 'cogs'));
+await loadCogs(path.join(factionPath, 'tasks'));
+await loadEvents(path.join(factionPath, 'events'));
 
 client.once(Events.ClientReady, async () => {
     logger.info(`[INFO] Тестовый бот ${client.user.tag} запущен для фракции ${FACTION}`);
@@ -140,14 +148,14 @@ client.once(Events.ClientReady, async () => {
         for (const [, guild] of client.guilds.cache) {
             await guild.members.fetch();
         }
-    } catch (e) {
+    } catch (e: any) {
         logger.warn(`[WARNING] Ошибка кэширования участников:`, e.message);
     }
 
     logger.info(`[INFO] Загружено команд: ${commandsData.length}`);
 });
 
-client.on(Events.InteractionCreate, async (interaction) => {
+client.on(Events.InteractionCreate, async (interaction: any) => {
     if (!interaction.isChatInputCommand()) return;
 
     const command = client.commands.get(interaction.commandName);
@@ -155,7 +163,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
     try {
         await command.execute(interaction);
-    } catch (error) {
+    } catch (error: any) {
         logger.error(`[ERROR] Ошибка команды /${interaction.commandName}:`, error.message);
         if (!interaction.replied && !interaction.deferred) {
             await interaction.reply({ content: '[ERROR] Произошла ошибка.', ephemeral: true }).catch(() => { });
@@ -163,14 +171,14 @@ client.on(Events.InteractionCreate, async (interaction) => {
     }
 });
 
-client.on(Events.MessageCreate, async (message) => {
+client.on(Events.MessageCreate, async (message: any) => {
     if (message.author.bot) return;
 
     for (const cog of client.commands.values()) {
         if (typeof cog.handleMessage === 'function') {
             try {
                 await cog.handleMessage(message, client);
-            } catch (e) {
+            } catch (e: any) {
                 logger.error(`[ERROR] Ошибка:`, e.message);
             }
         }
@@ -185,7 +193,7 @@ process.on('uncaughtException', (error) => {
     logger.error('[ERROR] Необработанное исключение:', error);
 });
 
-client.login(BOT_TOKEN).catch(err => {
+client.login(BOT_TOKEN).catch((err: any) => {
     logger.error('[ERROR] Ошибка входа:', err.message);
     process.exit(1);
 });

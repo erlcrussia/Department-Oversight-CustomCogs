@@ -1,10 +1,10 @@
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
-const { staffPanelContainer, FLAGS, errorContainer } = require('../utils/embeds');
-const { staffRows } = require('../utils/panels');
-const emias = require('../dataUtils/emias');
-const { ROLES } = require('../utils/constants');
+import { SlashCommandBuilder, PermissionFlagsBits } from 'discord.js';
+import { staffPanelContainer, FLAGS, errorContainer } from '../utils/embeds.js';
+import { staffRows } from '../utils/panels.js';
+import emias from '../dataUtils/emias.js';
+import { ROLES } from '../utils/constants.js';
 
-module.exports = {
+export default {
   data: new SlashCommandBuilder()
     .setName('штаб')
     .setNameLocalizations({ 'en-US': 'staff', 'en-GB': 'staff' })

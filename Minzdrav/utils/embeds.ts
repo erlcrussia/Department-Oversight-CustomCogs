@@ -1,4 +1,4 @@
-const {
+import {
   ContainerBuilder,
   TextDisplayBuilder,
   SectionBuilder,
@@ -6,9 +6,9 @@ const {
   SeparatorSpacingSize,
   ThumbnailBuilder,
   MessageFlags,
-} = require('discord.js');
-const { ICON_URL, PRIMARY_COLOR, DISCLAIMER } = require('../config');
-const { TICKET_STATUS_LABELS, DOCTOR_STATUS_LABELS } = require('./constants');
+} from 'discord.js';
+import { ICON_URL, PRIMARY_COLOR, DISCLAIMER } from '../config.js';
+import { TICKET_STATUS_LABELS, DOCTOR_STATUS_LABELS } from './constants.js';
 
 function containerBase() {
   return new ContainerBuilder().setAccentColor(PRIMARY_COLOR);
@@ -242,7 +242,23 @@ function splitText(str, max) {
 
 const FLAGS = MessageFlags.IsComponentsV2;
 
-module.exports = {
+export {
+  containerBase,
+  mainPanelContainer,
+  staffPanelContainer,
+  queueContainer,
+  cardContainer,
+  helpContainer,
+  siteCodeContainer,
+  integrationSettingsContainer,
+  errorContainer,
+  successContainer,
+  formatDate,
+  FLAGS,
+  disclaimerText
+};
+
+export default {
   containerBase,
   mainPanelContainer,
   staffPanelContainer,

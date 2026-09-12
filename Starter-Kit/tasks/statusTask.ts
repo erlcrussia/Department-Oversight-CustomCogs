@@ -1,11 +1,11 @@
-const { ActivityType } = require('discord.js');
+import { ActivityType } from 'discord.js';
 
 const statusList = [
   { name: '-!о боте | erlcrussia.com', type: ActivityType.Custom },
 ];
 let currentIndex = 0;
 
-module.exports = {
+export default {
   name: 'status-changer',
   interval: 300000, // 5 минут если кто не понял
 

@@ -1,11 +1,11 @@
-const { SlashCommandBuilder } = require('discord.js');
-const { mainPanelContainer, FLAGS } = require('../utils/embeds');
-const { mainRows } = require('../utils/panels');
-const emias = require('../dataUtils/emias');
-const { isStaff, isDoctor, isHeadPhysician } = require('../utils/permissions');
-const interactionHandler = require('../events/interactionCreate');
+import { SlashCommandBuilder } from 'discord.js';
+import { mainPanelContainer, FLAGS } from '../utils/embeds.js';
+import { mainRows } from '../utils/panels.js';
+import emias from '../dataUtils/emias.js';
+import { isStaff, isDoctor, isHeadPhysician } from '../utils/permissions.js';
+import interactionHandler from '../events/interactionCreate.js';
 
-module.exports = {
+export default {
   data: new SlashCommandBuilder()
     .setName('емиас')
     .setNameLocalizations({ 'en-US': 'emias', 'en-GB': 'emias' })

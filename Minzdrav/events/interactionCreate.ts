@@ -1,12 +1,17 @@
-const {
+import {
   Events,
   ModalBuilder,
   TextInputBuilder,
   TextInputStyle,
   ActionRowBuilder,
   PermissionFlagsBits,
-} = require('discord.js');
-const {
+  ContainerBuilder,
+  TextDisplayBuilder,
+  SeparatorBuilder,
+  SeparatorSpacingSize,
+} from 'discord.js';
+import { PRIMARY_COLOR, DISCLAIMER } from '../config.js';
+import {
   errorContainer,
   successContainer,
   siteCodeContainer,
@@ -16,13 +21,13 @@ const {
   helpContainer,
   staffPanelContainer,
   FLAGS,
-} = require('../utils/embeds');
-const { mainRows, staffRows, statusSelectRow, wipeSelectRow, integrationSettingsRows } = require('../utils/panels');
-const emias = require('../dataUtils/emias');
-const settings = require('../dataUtils/settings');
-const { ROLES } = require('../utils/constants');
+} from '../utils/embeds.js';
+import { mainRows, staffRows, statusSelectRow, wipeSelectRow, integrationSettingsRows } from '../utils/panels.js';
+import emias from '../dataUtils/emias.js';
+import settings from '../dataUtils/settings.js';
+import { ROLES } from '../utils/constants.js';
 
-module.exports = {
+export default {
   name: Events.InteractionCreate,
 
   async execute(interaction, client) {
@@ -90,10 +95,10 @@ module.exports = {
 async function handleBookButton(interaction, gid) {
   const modal = new ModalBuilder().setCustomId('emias:book:modal').setTitle('Запись к врачу');
   modal.addComponents(
-    new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('doctor').setLabel('Врач (ID # или ФИО)').setStyle(TextInputStyle.Short).setRequired(true).setPlaceholder('#2 или Соколова')),
-    new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('date').setLabel('Дата').setStyle(TextInputStyle.Short).setRequired(true).setPlaceholder('2026-08-30 или сегодня/завтра')),
-    new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('time').setLabel('Время').setStyle(TextInputStyle.Short).setRequired(true).setPlaceholder('10:30')),
-    new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('patient').setLabel('Персонаж ID (пусто = первый)').setStyle(TextInputStyle.Short).setRequired(false).setPlaceholder('1')),
+    new ActionRowBuilder<TextInputBuilder>().addComponents(new TextInputBuilder().setCustomId('doctor').setLabel('Врач (ID # или ФИО)').setStyle(TextInputStyle.Short).setRequired(true).setPlaceholder('#2 или Соколова')),
+    new ActionRowBuilder<TextInputBuilder>().addComponents(new TextInputBuilder().setCustomId('date').setLabel('Дата').setStyle(TextInputStyle.Short).setRequired(true).setPlaceholder('2026-08-30 или сегодня/завтра')),
+    new ActionRowBuilder<TextInputBuilder>().addComponents(new TextInputBuilder().setCustomId('time').setLabel('Время').setStyle(TextInputStyle.Short).setRequired(true).setPlaceholder('10:30')),
+    new ActionRowBuilder<TextInputBuilder>().addComponents(new TextInputBuilder().setCustomId('patient').setLabel('Персонаж ID (пусто = первый)').setStyle(TextInputStyle.Short).setRequired(false).setPlaceholder('1')),
   );
   await interaction.showModal(modal);
 }
@@ -146,8 +151,6 @@ async function handleTickets(interaction, gid) {
     await interaction.editReply({ components: [errorContainer('Нет персонажей.')], flags: FLAGS });
     return;
   }
-  const { ContainerBuilder, TextDisplayBuilder, SeparatorBuilder, SeparatorSpacingSize } = require('discord.js');
-  const { PRIMARY_COLOR, ICON_URL, DISCLAIMER } = require('../config');
   const c = new ContainerBuilder().setAccentColor(PRIMARY_COLOR);
   c.addTextDisplayComponents(new TextDisplayBuilder().setContent(`## Мои талоны`));
   c.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true));
@@ -168,7 +171,7 @@ async function handleTickets(interaction, gid) {
 async function handleLinkButton(interaction) {
   const modal = new ModalBuilder().setCustomId('emias:link:modal').setTitle('Привязка персонажа');
   modal.addComponents(
-    new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('code').setLabel('Код с сайта (6 символов)').setStyle(TextInputStyle.Short).setRequired(true).setMinLength(4).setMaxLength(10))
+    new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('code').setLabel('Код с сайта (6 символов)').setStyle(TextInputStyle.Short).setRequired(true).setMinLength(4).setMaxLength(10)) as any
   );
   await interaction.showModal(modal);
 }
@@ -210,7 +213,7 @@ async function handleQueue(interaction, gid) {
 async function handleCardButton(interaction) {
   const modal = new ModalBuilder().setCustomId('emias:card:modal').setTitle('Карта пациента');
   modal.addComponents(
-    new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('pid').setLabel('ID пациента').setStyle(TextInputStyle.Short).setRequired(true).setPlaceholder('1'))
+    new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('pid').setLabel('ID пациента').setStyle(TextInputStyle.Short).setRequired(true).setPlaceholder('1')) as any
   );
   await interaction.showModal(modal);
 }
@@ -254,11 +257,11 @@ async function handleAdmitButton(interaction, gid) {
   }
   const modal = new ModalBuilder().setCustomId('emias:admit:modal').setTitle('Прием — запись ЭМК');
   modal.addComponents(
-    new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('pid').setLabel('ID пациента').setStyle(TextInputStyle.Short).setRequired(true)),
-    new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('complaints').setLabel('Жалобы').setStyle(TextInputStyle.Paragraph).setRequired(false)),
-    new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('code').setLabel('МКБ код (напр. J00)').setStyle(TextInputStyle.Short).setRequired(false)),
-    new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('text').setLabel('Диагноз текст').setStyle(TextInputStyle.Short).setRequired(false)),
-    new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('notes').setLabel('Заметки / больничный дней').setStyle(TextInputStyle.Short).setRequired(false)),
+    new ActionRowBuilder<TextInputBuilder>().addComponents(new TextInputBuilder().setCustomId('pid').setLabel('ID пациента').setStyle(TextInputStyle.Short).setRequired(true)),
+    new ActionRowBuilder<TextInputBuilder>().addComponents(new TextInputBuilder().setCustomId('complaints').setLabel('Жалобы').setStyle(TextInputStyle.Paragraph).setRequired(false)),
+    new ActionRowBuilder<TextInputBuilder>().addComponents(new TextInputBuilder().setCustomId('code').setLabel('МКБ код (напр. J00)').setStyle(TextInputStyle.Short).setRequired(false)),
+    new ActionRowBuilder<TextInputBuilder>().addComponents(new TextInputBuilder().setCustomId('text').setLabel('Диагноз текст').setStyle(TextInputStyle.Short).setRequired(false)),
+    new ActionRowBuilder<TextInputBuilder>().addComponents(new TextInputBuilder().setCustomId('notes').setLabel('Заметки / больничный дней').setStyle(TextInputStyle.Short).setRequired(false)),
   );
   await interaction.showModal(modal);
 }
@@ -290,10 +293,10 @@ async function handlePrescriptionButton(interaction, gid) {
   }
   const modal = new ModalBuilder().setCustomId('emias:prescription:modal').setTitle('Рецепт');
   modal.addComponents(
-    new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('pid').setLabel('ID пациента').setStyle(TextInputStyle.Short).setRequired(true)),
-    new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('med').setLabel('Препарат').setStyle(TextInputStyle.Short).setRequired(true)),
-    new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('dosage').setLabel('Дозировка').setStyle(TextInputStyle.Short).setRequired(true).setPlaceholder('500 мг 2р/день')),
-    new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('days').setLabel('Дней').setStyle(TextInputStyle.Short).setRequired(false).setPlaceholder('14')),
+    new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('pid').setLabel('ID пациента').setStyle(TextInputStyle.Short).setRequired(true)) as any,
+    new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('med').setLabel('Препарат').setStyle(TextInputStyle.Short).setRequired(true)) as any,
+    new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('dosage').setLabel('Дозировка').setStyle(TextInputStyle.Short).setRequired(true).setPlaceholder('500 мг 2р/день')) as any,
+    new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('days').setLabel('Дней').setStyle(TextInputStyle.Short).setRequired(false).setPlaceholder('14')) as any,
   );
   await interaction.showModal(modal);
 }
@@ -325,10 +328,10 @@ async function handleStaffAddButton(interaction, gid) {
   if (!hasHead && !isAdmin && !isHead) { await interaction.reply({ components: [errorContainer('Первым — только админ.')], flags: FLAGS, ephemeral: true }); return; }
   const modal = new ModalBuilder().setCustomId('staff:add:modal').setTitle('Добавить сотрудника');
   modal.addComponents(
-    new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('discordId').setLabel('Discord ID').setStyle(TextInputStyle.Short).setRequired(true).setPlaceholder('123456789012345678')),
-    new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('fio').setLabel('ФИО').setStyle(TextInputStyle.Short).setRequired(true).setPlaceholder('Иванов Иван Иванович')),
-    new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('role').setLabel('Роль').setStyle(TextInputStyle.Short).setRequired(true).setPlaceholder('Главный врач / Врач / Регистратор / Медсестра')),
-    new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('specialty').setLabel('Специальность (для врачей)').setStyle(TextInputStyle.Short).setRequired(false).setPlaceholder('terapevt')),
+    new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('discordId').setLabel('Discord ID').setStyle(TextInputStyle.Short).setRequired(true).setPlaceholder('123456789012345678')) as any,
+    new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('fio').setLabel('ФИО').setStyle(TextInputStyle.Short).setRequired(true).setPlaceholder('Иванов Иван Иванович')) as any,
+    new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('role').setLabel('Роль').setStyle(TextInputStyle.Short).setRequired(true).setPlaceholder('Главный врач / Врач / Регистратор / Медсестра')) as any,
+    new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('specialty').setLabel('Специальность (для врачей)').setStyle(TextInputStyle.Short).setRequired(false).setPlaceholder('terapevt')) as any,
   );
   await interaction.showModal(modal);
 }
@@ -362,8 +365,6 @@ async function handleStats(interaction, gid) {
   const actor = await emias.getUserByDiscordId(interaction.user.id, gid);
   if (!actor || actor.role !== ROLES.HEAD_PHYSICIAN) throw new Error('Только главврач.');
   const s = await emias.getStats(gid);
-  const { ContainerBuilder, TextDisplayBuilder, SeparatorBuilder, SeparatorSpacingSize } = require('discord.js');
-  const { PRIMARY_COLOR, DISCLAIMER } = require('../config');
   const c = new ContainerBuilder().setAccentColor(PRIMARY_COLOR);
   c.addTextDisplayComponents(new TextDisplayBuilder().setContent(`## Статистика ЕМИАС`));
   c.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true));
@@ -407,8 +408,8 @@ async function handleWipeSelect(interaction, gid) {
 async function handleBlockButton(interaction) {
   const modal = new ModalBuilder().setCustomId('staff:block:modal').setTitle('Блокировка');
   modal.addComponents(
-    new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('pid').setLabel('ID пациента').setStyle(TextInputStyle.Short).setRequired(true)),
-    new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('reason').setLabel('Причина').setStyle(TextInputStyle.Short).setRequired(false)),
+    new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('pid').setLabel('ID пациента').setStyle(TextInputStyle.Short).setRequired(true)) as any,
+    new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('reason').setLabel('Причина').setStyle(TextInputStyle.Short).setRequired(false)) as any,
   );
   await interaction.showModal(modal);
 }
@@ -428,7 +429,7 @@ async function handleBlockModal(interaction) {
 async function handleUnblockButton(interaction) {
   const modal = new ModalBuilder().setCustomId('staff:unblock:modal').setTitle('Разблокировка');
   modal.addComponents(
-    new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('pid').setLabel('ID пациента').setStyle(TextInputStyle.Short).setRequired(true)),
+    new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('pid').setLabel('ID пациента').setStyle(TextInputStyle.Short).setRequired(true)) as any,
   );
   await interaction.showModal(modal);
 }
