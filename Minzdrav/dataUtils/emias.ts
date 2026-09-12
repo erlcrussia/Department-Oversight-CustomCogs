@@ -70,6 +70,12 @@ function mapAudit(a) {
   };
 }
 
+function makeError(msg: string, code: string): Error {
+  const e: any = new Error(msg);
+  e.code = code;
+  return e;
+}
+
 // ─── Нумерация документов ────────────────────────────────────────────────
 
 async function nextCardNumber(guildId) {
@@ -126,7 +132,7 @@ async function getUserById(id) {
 }
 
 async function getAllStaff(guildId) {
-  const where = { isActive: 1 };
+  const where: any = { isActive: 1 };
   if (guildId) where.guildId = guildId;
   const all = await prisma.users.findMany({ where });
   const order = { [ROLES.HEAD_PHYSICIAN]: 0, [ROLES.PHYSICIAN]: 1, [ROLES.REGISTRAR]: 2, [ROLES.NURSE]: 3 };
@@ -135,7 +141,7 @@ async function getAllStaff(guildId) {
 }
 
 async function getDoctors(guildId) {
-  const where = { isActive: 1, role: { in: [ROLES.PHYSICIAN, ROLES.HEAD_PHYSICIAN] } };
+  const where: any = { isActive: 1, role: { in: [ROLES.PHYSICIAN, ROLES.HEAD_PHYSICIAN] } };
   if (guildId) where.guildId = guildId;
   const all = await prisma.users.findMany({ where, orderBy: { fullName: 'asc' } });
   return all.map(mapUser);
@@ -154,7 +160,7 @@ async function createStaff({ discordId, discordUsername, fullName, specialty, ro
 }
 
 async function updateStaff(id, fields) {
-  const data = {};
+  const data: any = {};
   if (fields.full_name !== undefined) data.fullName = fields.full_name;
   if (fields.specialty !== undefined) data.specialty = fields.specialty;
   if (fields.role !== undefined) data.role = fields.role;
@@ -186,7 +192,7 @@ async function getPatientById(id) {
 }
 
 async function searchPatients(query, guildId, limit = 20) {
-  const where = {};
+  const where: any = {};
   if (guildId) where.guildId = guildId;
 
   if (!query) {
@@ -196,7 +202,7 @@ async function searchPatients(query, guildId, limit = 20) {
 
   const like = `%${query}%`;
   const conditions = [`(full_name ILIKE $1 OR card_number ILIKE $1 OR oms_number ILIKE $1)`];
-  const params = [like];
+  const params: any[] = [like];
   let idx = 2;
 
   if (guildId) {
@@ -214,7 +220,7 @@ async function searchPatients(query, guildId, limit = 20) {
 }
 
 async function getCitizensByDiscordId(discordId, guildId) {
-  const where = { discordId };
+  const where: any = { discordId };
   if (guildId) where.guildId = guildId;
   const rows = await prisma.patients.findMany({ where, orderBy: { fullName: 'asc' } });
   return rows.map(mapPatient);
@@ -251,7 +257,7 @@ async function getPatientCard(patientId) {
 async function createPatient({ fullName, birthDate, sex, omsNumber, bloodGroup, allergies, phone, discordId, createdBy, guildId }) {
   if (omsNumber) {
     const dup = await prisma.patients.findFirst({ where: { omsNumber } });
-    if (dup) { const e = new Error('Пациент с таким ОМС уже существует'); e.code = 'DUP_OMS'; throw e; }
+    if (dup) throw makeError('Пациент с таким ОМС уже существует', 'DUP_OMS');
   }
   const card = await nextCardNumber(guildId);
   const p = await prisma.patients.create({
@@ -270,11 +276,11 @@ async function createPatient({ fullName, birthDate, sex, omsNumber, bloodGroup, 
 async function importPatient({ fullName, cardNumber, birthDate, sex, omsNumber, bloodGroup, allergies, phone, guildId }) {
   if (cardNumber) {
     const dup = await prisma.patients.findUnique({ where: { cardNumber } });
-    if (dup) { const e = new Error('Карта уже существует'); e.code = 'DUP_CARD'; throw e; }
+    if (dup) throw makeError('Карта уже существует', 'DUP_CARD');
   }
   if (omsNumber) {
     const dup = await prisma.patients.findFirst({ where: { omsNumber } });
-    if (dup) { const e = new Error('ОМС уже существует'); e.code = 'DUP_OMS'; throw e; }
+    if (dup) throw makeError('ОМС уже существует', 'DUP_OMS');
   }
   const finalCard = cardNumber || await nextCardNumber(guildId);
   const p = await prisma.patients.create({
@@ -292,11 +298,11 @@ async function importPatient({ fullName, cardNumber, birthDate, sex, omsNumber, 
 async function linkPatientByCode(code, discordId) {
   const normalized = code.toUpperCase().replace(/[^A-Z0-9]/g, '');
   const row = await prisma.linkCode.findUnique({ where: { code: normalized } });
-  if (!row) { const e = new Error('Код не найден'); e.code = 'NOT_FOUND'; throw e; }
-  if (row.usedAt) { const e = new Error('Код уже использован'); e.code = 'USED'; throw e; }
-  if (new Date(row.expiresAt) < new Date()) { const e = new Error('Код истёк'); e.code = 'EXPIRED'; throw e; }
+  if (!row) throw makeError('Код не найден', 'NOT_FOUND');
+  if (row.usedAt) throw makeError('Код уже использован', 'USED');
+  if (new Date(row.expiresAt) < new Date()) throw makeError('Код истёк', 'EXPIRED');
   const patient = await getPatientById(row.patientId);
-  if (!patient) { const e = new Error('Пациент не найден'); e.code = 'PATIENT_NOT_FOUND'; throw e; }
+  if (!patient) throw makeError('Пациент не найден', 'PATIENT_NOT_FOUND');
   await prisma.linkCode.update({ where: { code: normalized }, data: { usedAt: new Date() } });
   await prisma.patients.update({ where: { id: row.patientId }, data: { discordId } });
   await audit({ actorId: null, action: 'citizen.link', entityType: 'patient', entityId: String(row.patientId), details: { discordId, code: normalized } });
@@ -336,9 +342,9 @@ async function createSiteAuthCode(discordId, discordUsername, guildId) {
 async function consumeSiteAuthCode(code) {
   const normalized = code.toUpperCase().replace(/[^A-Z0-9]/g, '');
   const row = await prisma.siteAuthCode.findUnique({ where: { code: normalized } });
-  if (!row) { const e = new Error('Код не найден'); e.code = 'NOT_FOUND'; throw e; }
-  if (row.usedAt) { const e = new Error('Код уже использован'); e.code = 'USED'; throw e; }
-  if (new Date(row.expiresAt) < new Date()) { const e = new Error('Код истёк'); e.code = 'EXPIRED'; throw e; }
+  if (!row) throw makeError('Код не найден', 'NOT_FOUND');
+  if (row.usedAt) throw makeError('Код уже использован', 'USED');
+  if (new Date(row.expiresAt) < new Date()) throw makeError('Код истёк', 'EXPIRED');
   await prisma.siteAuthCode.update({ where: { code: normalized }, data: { usedAt: new Date() } });
 
   const existing = await prisma.citizenAccount.findUnique({ where: { discordId: row.discordId } });
@@ -366,7 +372,7 @@ async function getSiteAuthCode(code) {
 
 async function getQueue(dateISO, guildId) {
   const d = dateISO || new Date().toISOString().slice(0, 10);
-  const where = { date: d, status: { not: 'cancelled' } };
+  const where: any = { date: d, status: { not: 'cancelled' } };
   if (guildId) where.guildId = guildId;
   const rows = await prisma.appointment.findMany({ where, orderBy: { time: 'asc' } });
   const result = [];
@@ -379,7 +385,7 @@ async function getQueue(dateISO, guildId) {
 }
 
 async function getSchedule(doctorId, dateISO, guildId) {
-  const where = { doctorId, date: dateISO, status: { in: ['waiting', 'in_room'] } };
+  const where: any = { doctorId, date: dateISO, status: { in: ['waiting', 'in_room'] } };
   if (guildId) where.guildId = guildId;
   const rows = await prisma.appointment.findMany({ where, orderBy: { time: 'asc' } });
   const result = [];
@@ -393,22 +399,22 @@ async function getSchedule(doctorId, dateISO, guildId) {
 
 async function bookAppointment({ patientId, doctorId, date, time, room, viaDiscordId, guildId }) {
   const pRaw = await prisma.patients.findUnique({ where: { id: patientId } });
-  if (!pRaw) { const e = new Error('Пациент не найден'); e.code = 'PATIENT_NOT_FOUND'; throw e; }
-  if (pRaw.status === 'blocked') { const e = new Error('Пациент заблокирован'); e.code = 'BLOCKED'; throw e; }
+  if (!pRaw) throw makeError('Пациент не найден', 'PATIENT_NOT_FOUND');
+  if (pRaw.status === 'blocked') throw makeError('Пациент заблокирован', 'BLOCKED');
 
   if (doctorId) {
     const doc = await prisma.users.findUnique({ where: { id: doctorId } });
-    if (!doc || doc.isActive === 0) { const e = new Error('Врач не найден'); e.code = 'DOCTOR_NOT_FOUND'; throw e; }
+    if (!doc || doc.isActive === 0) throw makeError('Врач не найден', 'DOCTOR_NOT_FOUND');
     const conflict = await prisma.appointment.findFirst({
       where: { doctorId, date, time, status: { in: ['waiting', 'in_room'] } },
     });
-    if (conflict) { const e = new Error('Время у врача занято'); e.code = 'DOCTOR_CONFLICT'; throw e; }
+    if (conflict) throw makeError('Время у врача занято', 'DOCTOR_CONFLICT');
   }
 
   const selfConflict = await prisma.appointment.findFirst({
     where: { patientId, date, time, status: { in: ['waiting', 'in_room'] } },
   });
-  if (selfConflict) { const e = new Error('У пациента уже есть талон на это время'); e.code = 'SELF_CONFLICT'; throw e; }
+  if (selfConflict) throw makeError('У пациента уже есть талон на это время', 'SELF_CONFLICT');
 
   const ticket = await nextTicketNumber(date, guildId);
   const actor = viaDiscordId ? await prisma.users.findUnique({ where: { discordId: viaDiscordId } }) : null;
@@ -428,12 +434,12 @@ async function bookAppointment({ patientId, doctorId, date, time, room, viaDisco
 
 async function cancelTicket(ticketId, viaDiscordId) {
   const aRaw = await prisma.appointment.findUnique({ where: { id: ticketId } });
-  if (!aRaw) { const e = new Error('Талон не найден'); e.code = 'NOT_FOUND'; throw e; }
-  if (aRaw.status !== 'waiting') { const e = new Error('Можно отменить только талон в ожидании'); e.code = 'BAD_STATUS'; throw e; }
+  if (!aRaw) throw makeError('Талон не найден', 'NOT_FOUND');
+  if (aRaw.status !== 'waiting') throw makeError('Можно отменить только талон в ожидании', 'BAD_STATUS');
 
   const patient = await prisma.patients.findUnique({ where: { id: aRaw.patientId } });
   const staff = viaDiscordId ? await prisma.users.findUnique({ where: { discordId: viaDiscordId } }) : null;
-  if (patient?.discordId !== viaDiscordId && !staff) { const e = new Error('Нет прав для отмены'); e.code = 'FORBIDDEN'; throw e; }
+  if (patient?.discordId !== viaDiscordId && !staff) throw makeError('Нет прав для отмены', 'FORBIDDEN');
 
   await prisma.appointment.update({ where: { id: ticketId }, data: { status: 'cancelled', updatedAt: new Date() } });
   await audit({ actorId: staff ? staff.id : null, action: 'ticket.cancel', entityType: 'appointment', entityId: String(ticketId) });
@@ -442,13 +448,13 @@ async function cancelTicket(ticketId, viaDiscordId) {
 
 async function updateTicketStatus(ticketId, nextStatus, viaDiscordId) {
   const aRaw = await prisma.appointment.findUnique({ where: { id: ticketId } });
-  if (!aRaw) { const e = new Error('Талон не найден'); e.code = 'NOT_FOUND'; throw e; }
+  if (!aRaw) throw makeError('Талон не найден', 'NOT_FOUND');
   const allowed = { waiting: ['in_room', 'cancelled', 'no_show'], in_room: ['done', 'cancelled'], done: [], cancelled: [], no_show: [] };
-  if (!allowed[aRaw.status]?.includes(nextStatus)) { const e = new Error(`Недопустимый переход ${aRaw.status} → ${nextStatus}`); e.code = 'BAD_TRANSITION'; throw e; }
+  if (!allowed[aRaw.status]?.includes(nextStatus)) throw makeError(`Недопустимый переход ${aRaw.status} → ${nextStatus}`, 'BAD_TRANSITION');
 
   const actor = viaDiscordId ? await prisma.users.findUnique({ where: { discordId: viaDiscordId } }) : null;
   if (actor && aRaw.doctorId && aRaw.doctorId !== actor.id && actor.role !== ROLES.HEAD_PHYSICIAN && actor.role !== ROLES.REGISTRAR) {
-    const e = new Error('Нет прав'); e.code = 'FORBIDDEN'; throw e;
+    throw makeError('Нет прав', 'FORBIDDEN');
   }
 
   await prisma.appointment.update({ where: { id: ticketId }, data: { status: nextStatus, updatedAt: new Date() } });
@@ -511,7 +517,15 @@ async function addPrescription({ patientId, doctorId, medication, dosage, durati
 
 // ─── Аудит / Статистика ─────────────────────────────────────────────────
 
-async function audit({ actorId, action, entityType, entityId, details, ip, guildId }) {
+async function audit({ actorId, action, entityType, entityId, details, ip, guildId }: {
+  actorId?: any;
+  action: string;
+  entityType?: string;
+  entityId?: string;
+  details?: any;
+  ip?: any;
+  guildId?: any;
+}) {
   await prisma.auditLog.create({
     data: {
       actorId: actorId || null, action, entityType: entityType || null,
@@ -522,7 +536,7 @@ async function audit({ actorId, action, entityType, entityId, details, ip, guild
 }
 
 async function getAudit(guildId, limit = 50) {
-  const where = {};
+  const where: any = {};
   if (guildId) where.guildId = guildId;
   const rows = await prisma.auditLog.findMany({
     where, orderBy: { id: 'desc' }, take: limit,

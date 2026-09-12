@@ -34,7 +34,7 @@ function canManageTickets(user, ticket) {
 
 function requireStaff(user) {
   if (!isStaff(user)) {
-    const e = new Error('Требуются права сотрудника Минздрава');
+    const e: any = new Error('Требуются права сотрудника Минздрава');
     e.code = 'NOT_STAFF';
     throw e;
   }
@@ -42,7 +42,7 @@ function requireStaff(user) {
 
 function requireHead(user) {
   if (!isHeadPhysician(user)) {
-    const e = new Error('Только для Главного врача');
+    const e: any = new Error('Только для Главного врача');
     e.code = 'NOT_HEAD';
     throw e;
   }
@@ -50,7 +50,7 @@ function requireHead(user) {
 
 function requireDoctor(user) {
   if (!isDoctor(user)) {
-    const e = new Error('Только для врачей');
+    const e: any = new Error('Только для врачей');
     e.code = 'NOT_DOCTOR';
     throw e;
   }

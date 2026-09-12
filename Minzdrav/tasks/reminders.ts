@@ -32,7 +32,7 @@ module.exports = {
         const doctor = t.doctorId ? await prisma.users.findUnique({ where: { id: t.doctorId } }) : null;
 
         const dt = new Date(`${t.date}T${t.time}:00`);
-        const diffMs = dt - now;
+        const diffMs = dt.getTime() - now.getTime();
         const diffH = diffMs / 3600000;
         const id = t.id;
 

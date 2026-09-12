@@ -6,8 +6,8 @@ on:
   push:
 
 jobs:
-  syntax:
-    name: Syntax Check
+  typecheck:
+    name: TypeScript Check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -16,8 +16,8 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
-      - run: find . -name '*.js' -not -path './node_modules/*' -exec node --check {} \;
-        name: Check JS syntax
+      - run: npm run typecheck
+        name: Typecheck TypeScript
 
   security:
     name: Security Scan
@@ -26,8 +26,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Check forbidden patterns
         run: |
-          BAD=$(grep -rn "eval(" --include='*.js' . | grep -v node_modules || true)
+          BAD=$(grep -rn "eval(" --include='*.js' --include='*.ts' . | grep -v node_modules || true)
           if [ -n "$BAD" ]; then echo "eval() found:"; echo "$BAD"; exit 1; fi
 
-          BAD=$(grep -rn "require.*process\.env" --include='*.js' . | grep -v node_modules | grep -v '.env' || true)
+          BAD=$(grep -rn "require.*process\.env" --include='*.js' --include='*.ts' . | grep -v node_modules | grep -v '.env' || true)
           if [ -n "$BAD" ]; then echo "process.env in require() — use ticket:"; echo "$BAD"; exit 1; fi

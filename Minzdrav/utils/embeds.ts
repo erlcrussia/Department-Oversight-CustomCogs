@@ -55,7 +55,7 @@ function staffPanelContainer(staffList) {
   if (!staffList.length) {
     c.addTextDisplayComponents(new TextDisplayBuilder().setContent('Штат пуст. Добавьте первого сотрудника.'));
   } else {
-    const byRole = {};
+    const byRole: Record<string, any[]> = {};
     for (const u of staffList) {
       const r = u.role || 'Прочие';
       if (!byRole[r]) byRole[r] = [];

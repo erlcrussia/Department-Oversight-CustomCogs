@@ -3,6 +3,7 @@ module.exports = {
     name: 'ready',
     once: true,
     async execute() {
+        const botName = (global as any).botName || 'Бот';
         logger.info(`${botName} готов к работе!`);
     }
 };
