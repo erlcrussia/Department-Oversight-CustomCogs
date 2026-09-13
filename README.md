@@ -8,111 +8,227 @@
 
 Готовые коги публикуются через Pull Request. После ревью код принимается или отклоняется.
 
+## Требования
+
+- **Node.js >= 18.17** (см. `engines` в `package.json`)
+- **TypeScript 5.8+**, проект собирается в `dist/` (`npm run build`)
+- **ESM** — в `package.json` установлено `"type": "module"`, используйте `import`/`export`
+
 ## Структура репозитория
 
 ```
 CustomCogs/
-├── <Фракция>/
-│   ├── cogs/       # Слэш-команды
-│   ├── events/     # Обработчики событий Discord
-│   ├── tasks/      # Фоновые задачи
-│   ├── dataUtils/  # Файлы для работы с БД (Prisma)
-│   ├── utils/      # Вспомогательные файлы
-│   └── config.js   # Конфигурация кога
-├── Starter-Kit/    # Заготовка для новой фракции
-├── index.js        # Тестовый запуск (node index.js <фракция>)
+├── <Фракция>/          # MVD, FSB, FSVNG, MCHS, Minzdrav, Pravo
+│   ├── cogs/           # Слэш-команды (*.ts)
+│   ├── events/         # Обработчики событий Discord (*.ts)
+│   ├── tasks/          # Фоновые задачи (*.ts, { name, interval, execute })
+│   ├── dataUtils/      # Файлы для работы с БД (Prisma)
+│   ├── utils/          # Вспомогательные файлы фракции
+│   ├── locales/        # Локализация фракции (ru.json, en.json)
+│   └── config.ts       # Конфигурация кога (ICON_URL, цвета и т.д.)
+├── Starter-Kit/        # Заготовка для новой фракции (эталон)
+│   ├── cogs/hello.ts
+│   ├── events/ready.ts
+│   ├── tasks/statusTask.ts
+│   ├── config.ts
+│   └── locales/ utils/ dataUtils/
+├── utils/
+│   └── locale.ts       # Обёртка над основным t/getLang (прокси к Department-Oversight)
+├── scripts/
+│   └── checkLoad.js    # Верификация загрузки всех фракций из dist/
+├── index.ts            # Тестовый запуск (ESM, компилируется в dist/index.js)
+├── package.json        # type: module, scripts: build/typecheck/check:load
+├── tsconfig.json       # target ES2022, module NodeNext, outDir dist/
+├── .github/workflows/checks.yml
 ├── README.md
 ├── CONTRIBUTING.md
 └── LICENSE.md
 ```
 
+> **Примечание:** исходники — всегда `*.ts` в корне фракции, скомпилированные `*.js` попадают в `dist/<Фракция>/`. Не коммитьте `dist/` — он генерируется CI.
+
 Полные требования и примеры — в [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ## Доступные пакеты
 
-Бот предоставляет `discord.js`, `@prisma/client`, `winston`, `axios`, `luxon` и другие. Добавление новых пакетов — только через тикет.
+Бот предоставляет пакеты из `package.json` в корне репозитория. Актуальный список:
+
+| Пакет | Назначение |
+|-------|-----------|
+| `discord.js` `^14.23.2` | Работа с Discord API (слэш-команды, события, компоненты) |
+| `@prisma/client` / `prisma` `^7.4.0` | ORM для работы с базой данных |
+| `winston` `^3.17.0` | Логирование |
+| `luxon` `^3.7.2` | Работа с датой и временем |
+| `axios` `^1.12.2` | HTTP-запросы |
+| `dotenv` `^16.6.1` | Загрузка переменных из `.env` |
+
+Добавление новых пакетов — только через тикет. Не редактируйте `package.json`/`package-lock.json` без ревью.
+
+## Установка и сборка
+
+```bash
+npm ci              # установка зависимостей
+npm run typecheck   # проверка типов (tsc --noEmit)
+npm run build       # компиляция TS -> dist/
+npm run check:load  # верификация загрузки всех фракций из dist/
+```
 
 ## Тестирование
 
+Исходный `index.ts` компилируется в `dist/index.js` и используется для локального запуска. Файл `index.ts` **нельзя редактировать** — для кастомной логики тестирования создайте отдельный скрипт.
+
 ```bash
-node index.js MVD
+npm run build
+
+# Через npm-скрипты (рекомендуется):
+npm run test:mvd
+npm run test:fsb
+npm run test:mchs
+npm run test:minzdrav
+
+# Или напрямую:
+node dist/index.js MVD
+node dist/index.js Minzdrav
+# требует TEST_BOT_TOKEN или DISCORD_TOKEN в .env
 ```
 
-Файл `index.js` **нельзя редактировать**. Для изменения логики тестирования создайте отдельный скрипт.
+Логи при успешном запуске:
+
+```
+[INFO] Загружена команда: /привет
+[INFO] Загружена задача: status-changer
+[INFO] Загружено событие: ready
+[INFO] Тестовый бот <tag> запущен для фракции MVD
+```
+
+CI (`.github/workflows/checks.yml`) на каждый PR запускает `typecheck` → `build` → `check:load` и скан на `eval()` / `process.env` в `require()`.
 
 ## Список фракций
 
-| Директория | Фракция |
-|-----------|---------|
-| `FSB/` | Федеральная Служба Безопасности |
-| `MCHS/` | МЧС России |
-| `Minzdrav/` | Министерство Здравоохранения |
-| `MVD/` | Министерство Внутренних Дел |
+| Директория | Фракция | Статус |
+|-----------|---------|--------|
+| `FSB/` | Федеральная Служба Безопасности | заготовка (`config.ts` + `statusTask.ts`) |
+| `FSVNG/` | Федеральная Служба Войск Национальной Гвардии | заготовка |
+| `MCHS/` | МЧС России | заготовка |
+| `Minzdrav/` | Министерство Здравоохранения (ЕМИАС) | реализовано — см. [Minzdrav/README.md](./Minzdrav/README.md) |
+| `MVD/` | Министерство Внутренних Дел | заготовка |
+| `Pravo/` | Право (юридический блок) | заготовка |
+| `Starter-Kit/` | Шаблон для новой фракции | эталон (`hello.ts`, `ready.ts`, `statusTask.ts`) |
 
 ## Локализация
 
-Локализация для каждого кастомного бота вынесена в отдельную папку `/locales` с JSON-файлами. Основной бот автоматически обрабатывает загрузку локализаций для каждого кога.
+Локализация для каждой фракции вынесена в отдельную папку `<Фракция>/locales/` с JSON-файлами (`ru.json`, `en.json`). Основной бот автоматически обрабатывает загрузку локализаций. Прокси-модуль `utils/locale.ts` делегирует вызовы в основной бот (`Department-Oversight/utils/locale`).
 
 ### Как работает локализация
 
-Ключи в локализации когов используют префикс имени кога (например, `erl.sessions.durMinutes` для бота `erlcrussia`). Основной бот автоматически определяет, к какому когу относится ключ, и загружает локализацию из соответствующей папки.
+Ключи используют префикс фракции/неймспейса (например, `emias.help.title` или `erl.hello.greeting`). Основной бот определяет фракцию по ключу и грузит файл из `<Фракция>/locales/`.
 
-Основной бот использует язык гильдии из общей базы данных. Язык автокомплита и интерфейса кастомного бота зависит от языка основного бота — то есть если на сервере выбран русский язык, все кастомные боты тоже будут отвечать на русском.
+Язык гильдии берётся из общей БД через `getLang(guildId)`. Язык автокомплита и интерфейса кастомного кога наследуется от языка основного бота — если на сервере выбран русский, кастомные коги тоже отвечают на русском.
 
 ### Добавление новой локализации
 
-1. Создайте файл `locales/ru.json` и/или `en.json` в папке вашего кога
-2. Структура JSON-файла — объект с ключами в формате `namespace.command.key`:
+1. Создайте `locales/ru.json` и/или `locales/en.json` в папке вашей фракции:
    ```json
    {
-     "erl": {
-       "hello": {
-         "greeting": "Привет, {0}!"
+     "emias": {
+       "help": {
+         "title": "ЕМИАС — помощь"
        }
      }
    }
    ```
-3. Уберите соответствующие ключи из основных файлов `locales/ru.json` и `locales/en.json` — они теперь живут в папке кога.
+2. Не дублируйте ключи в корневых `locales/` основного бота — они должны жить только в папке кога.
 
-### Использование в коде кога
+### Использование в коде кога (TypeScript + ESM)
 
-Импортируйте `t` и `getLang` из основного модуля локализации:
+> Важно: в ESM импортах указывайте расширение `.js` даже для `.ts` исходников.
 
-```js
-const { SlashCommandBuilder } = require('discord.js');
-const { t, getLang } = require('../../../utils/locale');
+```ts
+import { SlashCommandBuilder } from 'discord.js';
+import { t, getLang } from '../../utils/locale.js';
 
-module.exports = {
+export default {
     data: new SlashCommandBuilder()
-        .setName('команда')
-        .setNameLocalizations({ 'en-US': 'command', 'en-GB': 'command' })
-        .setDescription('Описание команды.')
+        .setName('привет')
+        .setNameLocalizations({ 'en-US': 'hello', 'en-GB': 'hello' })
+        .setDescription('Простое приветствие от бота.')
         .setDescriptionLocalizations({
-            'en-US': 'Command description.',
-            'en-GB': 'Command description.',
-            'ru': 'Описание команды.'
-        })
-        .addStringOption(opt =>
-            opt.setName('никнейм')
-                .setNameLocalizations({ 'en-US': 'nickname', 'en-GB': 'nickname' })
-                .setDescription('Описание параметра.')
-                .setDescriptionLocalizations({
-                    'en-US': 'Parameter description.',
-                    'en-GB': 'Parameter description.',
-                    'ru': 'Описание параметра.'
-                })
-                .setRequired(true)
-                .setAutocomplete(true)
-        ),
+            'en-US': 'A simple greeting from the bot.',
+            'en-GB': 'A simple greeting from the bot.',
+            'ru': 'Простое приветствие от бота.'
+        }),
 
     async execute(interaction) {
         const lang = await getLang(interaction.guildId);
-        await interaction.reply({ content: t(lang, 'erl.hello.greeting', interaction.user.username) });
+        await interaction.reply({
+            content: t(lang, 'emias.help.title', interaction.user.username),
+            allowedMentions: { parse: [] }
+        });
     }
 };
 ```
 
-> **Важно:** язык бота определяется языком основного бота. Язык гильдии берётся из общей базы данных через `getLang(interaction.guildId)`.
+Эталон — `Starter-Kit/cogs/hello.ts:1`.
+
+## Шаблоны кода
+
+### Слэш-команда (`cogs/*.ts`)
+
+```ts
+import { SlashCommandBuilder } from 'discord.js';
+import { t, getLang } from '../../utils/locale.js';
+
+export default {
+  data: new SlashCommandBuilder().setName('команда').setDescription('Описание'),
+  async execute(interaction) { /* ... */ },
+  // опционально для компонентов:
+  async onInteraction(interaction, context) { return false; },
+  async handleModal(interaction, context) { return false; }
+};
+```
+
+### Событие (`events/*.ts`)
+
+```ts
+export default {
+    name: 'ready',
+    once: true,
+    async execute(...args: any[]) {
+        const logger = (global as any).logger || console;
+        logger.info('Бот готов к работе!');
+    }
+};
+```
+
+См. `Starter-Kit/events/ready.ts:1`.
+
+### Фоновая задача (`tasks/*.ts`)
+
+```ts
+import { ActivityType } from 'discord.js';
+
+export default {
+  name: 'status-changer',
+  interval: 300000, // 5 минут
+  execute: (client, logger) => {
+    if (!client.user) return;
+    client.user.setActivity('ER:LC Россия', { type: ActivityType.Watching });
+    logger.info('Статус обновлён');
+  }
+};
+```
+
+См. `Starter-Kit/tasks/statusTask.ts:1`.
+
+### Конфигурация (`config.ts`)
+
+```ts
+const ICON_URL = "https://cdn.erlcrussia.com/images/Moscow-RolePlay-Icon-Website.png";
+const HEX_COLOR = 0x0063B0;
+
+export default { ICON_URL, HEX_COLOR };
+export { ICON_URL, HEX_COLOR };
+```
 
 ## Лицензия
 
