@@ -7,10 +7,18 @@ const __dirname = path.dirname(__filename);
 
 let mainLocale: any = null;
 try {
-  const mainPath = path.resolve(__dirname, '../../utils/locale.js');
-  if (fs.existsSync(mainPath)) {
-    const mod = await import(pathToFileURL(mainPath).href);
-    mainLocale = mod.default || mod;
+  const candidates = [
+    path.resolve(__dirname, '../../utils/locale.js'),
+    path.resolve(__dirname, '../../utils/locale.ts'),
+    path.resolve(__dirname, '../../../utils/locale.js'),
+    path.resolve(__dirname, '../../../utils/locale.ts'),
+  ];
+  for (const p of candidates) {
+    if (fs.existsSync(p)) {
+      const mod = await import(pathToFileURL(p).href);
+      mainLocale = mod.default || mod;
+      break;
+    }
   }
 } catch {
   mainLocale = null;

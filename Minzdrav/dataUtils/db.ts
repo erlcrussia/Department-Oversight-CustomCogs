@@ -25,8 +25,15 @@ try {
     }
   }
   if (!found) {
-    const { PrismaClient } = await import('@prisma/client');
-    prisma = new PrismaClient();
+    try {
+      const prismaModule: any = await import('@prisma/client');
+      const PrismaClient = prismaModule?.PrismaClient || prismaModule?.default?.PrismaClient || prismaModule?.default;
+      if (typeof PrismaClient === 'function') {
+        prisma = new PrismaClient();
+      }
+    } catch {
+      prisma = null;
+    }
   }
 } catch {
   prisma = null;

@@ -18,6 +18,10 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
         name: Typecheck TypeScript
+      - run: npm run build
+        name: Build TypeScript
+      - run: npm run check:load
+        name: Verify Faction Modules Load
 
   security:
     name: Security Scan

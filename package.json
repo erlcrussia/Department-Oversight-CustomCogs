@@ -7,6 +7,8 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "build": "tsc",
+    "check:load": "node scripts/checkLoad.js",
+    "test": "npm run check:load",
     "test:mvd": "node dist/index.js MVD",
     "test:fsb": "node dist/index.js FSB",
     "test:mchs": "node dist/index.js MCHS",

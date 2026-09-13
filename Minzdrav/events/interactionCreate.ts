@@ -35,6 +35,7 @@ export default {
     const gid = interaction.guildId;
 
     if (interaction.isChatInputCommand()) return false;
+    if (interaction.replied || interaction.deferred) return false;
 
     try {
       if (interaction.isButton()) {
