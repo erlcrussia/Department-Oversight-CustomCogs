@@ -3,6 +3,8 @@ name: CustomCogs Checks
 on:
   pull_request:
     branches: [main]
+  push:
+
 jobs:
   typecheck:
     name: TypeScript Check
